@@ -14,8 +14,9 @@ export default async req => {
   if (req.method !== 'POST') return J({ error: 'Nur POST' }, 405);
   let d; try { d = await req.json(); } catch { return J({ error: 'Ungültige Anfrage' }, 400); }
   const st = getStore('wishlist'), a = d.action;
-  const getW = s => st.get('w:' + str(s, 12), { type: 'json' });
-  const getU = e => st.get('u:' + str(e, 120).toLowerCase(), { type: 'json' });
+  // ältere Einträge (erste Version) automatisch ergänzen
+  const getW = async s => { const w = await st.get('w:' + str(s, 12), { type: 'json' }); if (w) { w.occasion ||= 'Geburtstag'; w.items = (w.items || []).map(i => ({ pri: 0, res: false, ...i })); } return w; };
+  const getU = async e => { const u = await st.get('u:' + str(e, 120).toLowerCase(), { type: 'json' }); if (u && !u.lists) u.lists = u.slug ? [u.slug] : []; return u; };
   const login = async email => { const token = rnd(24); await st.set('s:' + token, email); return token; };
 
   // ---------- öffentlich ----------
@@ -56,10 +57,12 @@ export default async req => {
   // Passwort vergessen: Sicherheitsfrage holen, dann mit Antwort neues Passwort setzen
   if (a === 'resetq') {
     const u = await getU(d.email);
-    return u ? J({ q: u.q }) : J({ error: 'E-Mail nicht gefunden' }, 404);
+    if (!u) return J({ error: 'E-Mail nicht gefunden' }, 404);
+    return u.q ? J({ q: u.q }) : J({ error: 'Für dieses Konto ist keine Sicherheitsfrage hinterlegt' }, 400);
   }
   if (a === 'reset') {
     const u = await getU(d.email); if (!u) return J({ error: 'E-Mail nicht gefunden' }, 404);
+    if (!u.qhash) return J({ error: 'Für dieses Konto ist keine Sicherheitsfrage hinterlegt' }, 400);
     if (!same(u.qhash, str(d.qa, 120).toLowerCase(), u.qsalt)) return J({ error: 'Antwort ist falsch' }, 401);
     if (String(d.pw ?? '').length < 6) return J({ error: 'Neues Passwort: min. 6 Zeichen' }, 400);
     u.salt = rnd(16); u.hash = hash(d.pw, u.salt).toString('hex');
