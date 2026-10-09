@@ -102,6 +102,68 @@ input:focus,select:focus{border-color:var(--ac);box-shadow:0 0 0 4px rgba(255,61
 @keyframes pop2{from{opacity:0;transform:translateX(-50%) scale(.3) rotate(-20deg)}}
 @keyframes shake{20%,60%{transform:translateX(-10px)}40%,80%{transform:translateX(10px)}}
 .qr:not(:empty){animation-name:in}
+/* Tabs, Formulare, Teilen */
+.small{font-size:14px}
+.full{width:100%;margin-top:10px;padding:14px;font-size:17px}
+.tabs{display:flex;gap:6px;margin:16px auto 6px;max-width:640px;padding:6px;background:var(--card);border:1px solid var(--bd);border-radius:18px;backdrop-filter:blur(16px);box-shadow:0 10px 30px rgba(124,77,255,.15)}
+.tab{flex:1;gap:6px;background:none;color:var(--tx);box-shadow:none;border-radius:13px;padding:8px 6px;min-height:48px;font-weight:700}
+.tab::after{display:none}
+.tab:hover{transform:none;box-shadow:none;background:var(--in)}
+.tab.on,.tab.on:hover{background:linear-gradient(135deg,var(--ac),var(--ac3));color:#fff;box-shadow:0 6px 18px rgba(255,61,129,.35)}
+.ti{font-size:18px;line-height:1}
+.badge{min-width:20px;height:20px;padding:0 6px;border-radius:99px;background:#fff;color:var(--ac);font-size:12px;font-weight:800;display:inline-grid;place-items:center}
+.tab:not(.on) .badge{background:var(--ac);color:#fff}
+.tabbody{animation:in .4s both}
+.seg{display:flex;gap:4px;max-width:440px;margin:12px auto 0;padding:4px;background:var(--card);border:1px solid var(--bd);border-radius:14px}
+.seg button{flex:1;background:none;color:var(--tx);box-shadow:none;min-height:40px;padding:8px;font-size:14px;border-radius:10px}
+.seg button::after{display:none}
+.seg button:hover{transform:none;box-shadow:none}
+.seg button.on{background:linear-gradient(135deg,var(--ac),var(--ac3));color:#fff}
+.fld{display:block;margin:6px 0}
+.fl{display:block;font-weight:700;font-size:14px;margin:4px 0 0}
+.fld small{display:block;font-size:12px}
+.form2{display:grid;grid-template-columns:1fr 1fr;gap:4px 14px}
+.form3{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 14px}
+.imgrow{display:flex;gap:14px;align-items:center;justify-content:center;margin:8px 0}
+.imgrow .fld{flex:1;max-width:360px}
+.prev{width:96px;height:96px;flex:none;border-radius:16px;background:var(--in) center/cover;border:1px dashed var(--bd);display:grid;place-items:center;font-size:36px}
+.shares{display:grid;grid-template-columns:repeat(auto-fit,minmax(105px,1fr));gap:10px;margin:12px 0 4px}
+.sh{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:14px 8px;min-height:84px;border:0;border-radius:16px;font-weight:700;font-size:15px;color:#fff;text-decoration:none;box-shadow:0 6px 16px #0003;transition:transform .2s,box-shadow .2s}
+.sh:hover{transform:translateY(-3px) scale(1.03);box-shadow:0 12px 24px #0004}
+.si{font-size:26px;line-height:1}
+.wa{background:#11865a}.tg{background:#1679c0}.sms{background:#c25e00}.mail{background:#6a3fe0}
+.sh.more{background:var(--in);color:var(--tx);border:1px solid var(--bd)}
+.copy{display:flex;gap:8px;align-items:center}
+.copy input{flex:1;margin:0;min-width:0}
+.qrwrap .tools{margin-top:12px}
+.lcards{display:grid;gap:10px}
+.lcard{width:100%;justify-content:flex-start;gap:12px;text-align:left;background:var(--in);color:var(--tx);border:1px solid var(--bd);box-shadow:none;padding:12px 14px}
+.lcard::after{display:none}
+.lcard.on{border-color:var(--ac);box-shadow:0 0 0 3px rgba(255,61,129,.2)}
+.li{font-size:28px;line-height:1}
+.lt2{flex:1;display:flex;flex-direction:column;min-width:0}
+.lt2 small{font-weight:400}
+.chip.sm{padding:3px 10px;font-size:13px}
+.steps{text-align:left;max-width:440px;margin:10px auto 16px;line-height:1.9;padding-left:24px}
+.big{font-size:52px;animation:bounce 2s ease-in-out infinite}
+.how{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:12px auto 0}
+.how span{background:var(--card);border:1px solid var(--bd);border-radius:99px;padding:6px 14px 6px 6px;font-weight:600;font-size:14px;display:inline-flex;align-items:center;gap:8px}
+.how b{width:24px;height:24px;border-radius:50%;display:inline-grid;place-items:center;color:#fff;background:linear-gradient(135deg,var(--ac),var(--ac3));font-size:13px}
+@media (max-width:760px){
+ .tabs{position:fixed;left:8px;right:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));z-index:20;margin:0;max-width:none;gap:4px;padding:5px;box-shadow:0 10px 30px #0005;background:var(--bg);backdrop-filter:none}
+ .tab{flex-direction:column;gap:2px;font-size:11px;padding:6px 2px;min-height:56px;position:relative}
+ .ti{font-size:21px}
+ .tab .badge{position:absolute;top:3px;right:calc(50% - 26px);height:18px;min-width:18px;font-size:11px}
+ body.hastabs main{padding-bottom:110px}
+ body.hastabs .toast{bottom:calc(92px + env(safe-area-inset-bottom,0px))}
+ .form3{grid-template-columns:1fr}
+}
+@media (max-width:560px){
+ .form2{grid-template-columns:1fr}
+ .shares{grid-template-columns:repeat(2,1fr)}
+ .seg button{font-size:13px;padding:6px}
+ .how span{font-size:13px}
+}
 /* Handy & Tablet */
 @media (hover:none){button:hover,.btn:hover{transform:none}.card:hover{box-shadow:none}}
 @media (max-width:900px){
@@ -210,7 +272,6 @@ const myLists=()=>{try{return JSON.parse(ls.get('wl-mine')||'[]')}catch{return[]
 
 /* ---------- Bausteine ---------- */
 function nav(){const dark=darkNow();put($('#nav'),
- !pubView&&tok&&h('button',{class:'g acc',onclick:()=>go('edit')},'Meine Listen'),
  !pubView&&tok&&h('button',{class:'g acc',onclick:()=>{logout();go('')}},'Abmelden'),
  h('button',{class:'g icon',title:dark?'Helles Design':'Dunkles Design','aria-label':'Design umschalten',onclick:()=>setTheme(dark?'light':'dark')},dark?'☀️':'🌙'))}
 
@@ -286,11 +347,39 @@ function auth(app){
  draw();
  app.append(h('div',{class:'c'},h('h1',{},'🎁 Wunschliste'),h('p',{class:'mu'},'Erstelle deine Wunschliste und teile den Link mit Freunden.')),box)}
 
+/* ---------- Teilen ---------- */
+const dmy=bd=>{const[,m,d]=bd.split('-');return `${+d}.${+m}.`};
+const forWhat=w=>w.occasion==='Geburtstag'?`zum Geburtstag am ${dmy(w.bd)}`:`für ${w.occasion} (${dmy(w.bd)})`;
+function shareButtons(text,url,title){
+ const e=encodeURIComponent,short=text.replace(url,'').trim();
+ const a=(cls,href,ic,lab,ext)=>h('a',{class:'sh '+cls,href,target:ext?'_blank':false,rel:ext?'noopener noreferrer':false},h('span',{class:'si','aria-hidden':'true'},ic),lab);
+ return h('div',{class:'shares'},
+  a('wa','https://wa.me/?text='+e(text),'💬','WhatsApp',1),
+  a('tg',`https://t.me/share/url?url=${e(url)}&text=${e(short)}`,'✈️','Telegram',1),
+  a('sms','sms:?&body='+e(text),'📱','SMS'),
+  a('mail',`mailto:?subject=${e(title)}&body=${e(text)}`,'✉️','E-Mail'),
+  navigator.share&&h('button',{class:'sh more',onclick:()=>navigator.share({title,text:short,url}).catch(()=>{})},h('span',{class:'si','aria-hidden':'true'},'📤'),'Andere App'))}
+function copyRow(url){return h('div',{class:'copy'},h('input',{readonly:true,value:url,'aria-label':'Dein Link',onclick:e=>e.target.select()}),
+ h('button',{onclick:async e=>{const b=e.currentTarget;try{await navigator.clipboard.writeText(url);b.textContent='✓ Kopiert';burst(e)}catch{b.textContent='Markieren & kopieren'}setTimeout(()=>b.textContent='Kopieren',2000)}},'Kopieren'))}
+function qrBox(url){
+ const box=h('div',{class:'qr'}),cv=()=>box.querySelector('canvas');
+ if(window.QRCode)new QRCode(box,{text:url,width:200,height:200,colorDark:'#2b2230',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M});
+ else put(box,h('p',{style:'color:#2b2230;margin:0'},'QR-Code konnte nicht geladen werden'));
+ return h('div',{class:'qrwrap'},box,h('div',{class:'tools'},
+  navigator.canShare&&h('button',{onclick:()=>{const c=cv();if(!c)return toast('QR-Code nicht verfügbar');c.toBlob(b=>{const f=new File([b],'wunschliste-qr.png',{type:'image/png'});if(navigator.canShare({files:[f]}))navigator.share({files:[f],title:'Wunschliste',text:'Scan den Code für meine Wunschliste 🎁 '+url}).catch(()=>{});else toast('Bilder senden geht hier nicht – speichere den QR-Code')})}},'📤 QR-Code senden (z.B. WhatsApp)'),
+  h('button',{class:'g',onclick:()=>{const c=cv();if(!c)return toast('QR-Code nicht verfügbar');try{const a=h('a',{href:c.toDataURL('image/png'),download:'wunschliste-qr.png'});document.body.append(a);a.click();a.remove();toast('QR-Code gespeichert ✓')}catch{toast('Speichern hier nicht möglich')}}},'⬇ Als Bild speichern')))}
+const fld=(lab,el,hint)=>h('label',{class:'fld'},h('span',{class:'fl'},lab),el,hint&&h('small',{class:'mu'},hint));
+const PRI=['Nicht so wichtig','Schön','Sehr gern','Top-Wunsch! 🔥'];
+const TABS=[['list','🎁','Wünsche'],['add','➕','Hinzufügen'],['share','📤','Teilen'],['lists','📋','Listen']];
+
 /* ---------- Besitzer-Bereich ---------- */
 function listForm(w){
- const N=h('input',{placeholder:'Name (z.B. Alex)','aria-label':'Name',value:w?w.name:''}),O=occSel(w?w.occasion:'Geburtstag'),B=h('input',{type:'date','aria-label':'Datum',value:w?w.bd:''}),msg=h('p',{class:'mu',role:'alert'});
- return h('div',{class:'lf'},h('h3',{},w?'Liste bearbeiten':'Neue Liste anlegen'),h('div',{class:'row'},N,O,B),msg,
-  h('button',{onclick:async e=>{const d={token:tok,name:N.value.trim(),occasion:O.value,bd:B.value};const r=w?await api('meta',{...d,slug:w.slug}):await api('newlist',d);if(r.error)return msg.textContent=r.error;burst(e);if(r.slug)setCur(r.slug);toast(w?'Gespeichert ✓':'Neue Liste erstellt 🎉');render()}},w?'Speichern':'Liste erstellen'))}
+ const N=h('input',{placeholder:'z.B. Alex',value:w?w.name:''}),O=occSel(w?w.occasion:'Geburtstag'),B=h('input',{type:'date',value:w?w.bd:''}),msg=h('p',{class:'mu',role:'alert'});
+ return h('div',{},h('h3',{},w?'✎ Aktuelle Liste bearbeiten':'＋ Neue Liste anlegen'),
+  !w&&h('p',{class:'mu small'},'Zum Beispiel eine zweite Liste für Weihnachten.'),
+  h('div',{class:'form3'},fld('Name',N),fld('Anlass',O),fld('Datum',B)),msg,
+  h('button',{class:'full',onclick:async e=>{const d={token:tok,name:N.value.trim(),occasion:O.value,bd:B.value};const r=w?await api('meta',{...d,slug:w.slug}):await api('newlist',d);if(r.error)return msg.textContent=r.error;burst(e);
+   if(r.slug){setCur(r.slug);ls.set('wl-tab','add')}toast(w?'Gespeichert ✓':'Neue Liste erstellt 🎉');render()}},w?'Speichern':'Liste erstellen'))}
 
 async function owner(app,id){
  const me=await api('me',{token:tok});if(id!==rid)return;
@@ -299,73 +388,86 @@ async function owner(app,id){
  if(!lists.some(l=>l.slug===cur))setCur(lists[0].slug);
  const w=await api('getown',{token:tok,slug:cur});if(id!==rid)return;app.replaceChildren();
  if(w.error){setCur(lists[0].slug);return app.append(h('p',{class:'c'},'😕 '+w.error))}
+ document.body.classList.add('hastabs');
  const url=urlOf(w.slug),save=async()=>{const r=await api('save',{token:tok,slug:w.slug,items:w.items});if(r.error)toast('⚠️ '+r.error)};
- let sort=ls.get('wl-sort')||'manual';
+ let sort=ls.get('wl-sort')||'manual',tab=ls.get('wl-tab')||'list';
+ const bar=h('nav',{class:'tabs noprint','aria-label':'Bereiche'}),body=h('div',{class:'tabbody'});
+ const drawBar=()=>put(bar,TABS.map(([k,ic,lab])=>h('button',{class:'tab'+(k===tab?' on':''),'aria-current':k===tab?'page':false,onclick:()=>show(k)},
+  h('span',{class:'ti','aria-hidden':'true'},ic),h('span',{class:'tl'},lab),k==='list'&&w.items.length?h('span',{class:'badge'},w.items.length):null)));
+ const show=t=>{tab=VIEWS[t]?t:'list';ls.set('wl-tab',tab);drawBar();put(body,VIEWS[tab]());if(scrollY>150)scrollTo({top:0,behavior:'smooth'})};
 
- // Listen-Leiste
- const panel=h('div');let delArm=false;
- const openPanel=k=>{if(panel.dataset.k===k){panel.dataset.k='';return put(panel)}panel.dataset.k=k;put(panel,listForm(k==='new'?null:w))};
- app.append(h('div',{class:'box bar noprint'},h('div',{class:'tools'},
-  h('select',{'aria-label':'Liste wählen',onchange:e=>{setCur(e.target.value);render()}},lists.map(l=>h('option',{value:l.slug,selected:l.slug===cur},`${icon(l.occasion)} ${l.name} – ${l.occasion} (${l.count})`))),
-  h('button',{class:'g',onclick:()=>openPanel('new')},'＋ Neue Liste'),
-  h('button',{class:'g',onclick:()=>openPanel('edit')},'✎ Bearbeiten'),
-  lists.length>1&&h('button',{class:'g',onclick:async e=>{const b=e.currentTarget;if(!delArm){delArm=true;b.textContent='Wirklich löschen?';setTimeout(()=>{delArm=false;b.textContent='🗑 Löschen'},3000);return}const r=await api('dellist',{token:tok,slug:w.slug});if(r.error)return toast(r.error);setCur(r.slug);toast('Liste gelöscht');render()}},'🗑 Löschen')),panel));
+ function viewList(){
+  if(!w.items.length)return h('div',{class:'box c'},h('div',{class:'big','aria-hidden':'true'},'✨'),h('h3',{},'Deine Liste ist noch leer'),h('p',{class:'mu small'},'So funktioniert es:'),
+   h('ol',{class:'steps'},h('li',{},h('b',{},'Wünsche hinzufügen'),' – mit Bild, Preis und Link'),h('li',{},h('b',{},'Link teilen'),' – per WhatsApp, QR-Code & Co.'),h('li',{},h('b',{},'Freunde reservieren'),' – du siehst nicht, wer was kauft 🤫')),
+   h('button',{onclick:()=>show('add')},'➕ Ersten Wunsch hinzufügen'));
+  const stats=h('div',{class:'stats'}),seg=h('div',{class:'seg',role:'group','aria-label':'Sortierung'}),tip=h('p',{class:'mu c small'}),g=h('div',{class:'grid'});
+  const setSort=s=>{sort=s;ls.set('wl-sort',s);draw()};
+  const draw=()=>{
+   if(!w.items.length)return show('list');
+   drawBar();
+   const list=sort==='price'?[...w.items].sort((a,b)=>{const A=num(a.price),B=num(b.price);return A===B?0:A-B}):w.items;
+   const total=w.items.reduce((s,i)=>s+(isFinite(num(i.price))?num(i.price):0),0);
+   put(stats,h('span',{class:'chip'},`🎁 ${w.items.length} ${w.items.length===1?'Wunsch':'Wünsche'}`),h('span',{class:'chip'},'💶 Zusammen: '+fmt(total)));
+   put(seg,h('button',{class:sort==='manual'?'on':'','aria-pressed':String(sort==='manual'),onclick:()=>setSort('manual')},'✋ Eigene Reihenfolge'),h('button',{class:sort==='price'?'on':'','aria-pressed':String(sort==='price'),onclick:()=>setSort('price')},'💶 Nach Preis'));
+   tip.textContent=sort==='manual'?'Tipp: Karten mit der Maus ziehen oder ◀ ▶ antippen, um die Reihenfolge zu ändern. Sterne antippen = wie wichtig.':'Sortiert vom günstigsten zum teuersten Wunsch.';
+   put(g,list.map((it,i)=>card(it,i,{own:true,drag:sort==='manual',last:i===list.length-1,
+    onDel:async()=>{w.items=w.items.filter(x=>x!==it);await save();draw();toast('Wunsch gelöscht')},
+    onPri:async v=>{it.pri=v;await save()},
+    move:sort==='manual'&&(async dir=>{const j=i+dir;[w.items[i],w.items[j]]=[w.items[j],w.items[i]];await save();draw()})})))};
+  let dragId=null;
+  g.addEventListener('dragstart',e=>{const c=e.target.closest?.('.card');if(!c)return;dragId=Number(c.dataset.id);c.classList.add('drag');c.style.transform='';e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',String(dragId))}catch{}});
+  g.addEventListener('dragend',()=>{dragId=null;g.querySelectorAll('.drag,.over').forEach(x=>x.classList.remove('drag','over'))});
+  g.addEventListener('dragover',e=>{if(dragId==null)return;e.preventDefault();const c=e.target.closest('.card');g.querySelectorAll('.over').forEach(x=>x!==c&&x.classList.remove('over'));if(c&&Number(c.dataset.id)!==dragId)c.classList.add('over')});
+  g.addEventListener('drop',async e=>{e.preventDefault();const c=e.target.closest('.card'),from=dragId;dragId=null;if(!c||from==null)return draw();const to=Number(c.dataset.id);if(from===to)return draw();
+   const a=w.items.findIndex(x=>x.id===from),it=w.items.splice(a,1)[0],b=w.items.findIndex(x=>x.id===to);w.items.splice(a<=b?b+1:b,0,it);await save();draw()});
+  tilt(g);draw();
+  return h('div',{},stats,seg,tip,g,h('div',{class:'c',style:'margin-top:20px'},h('button',{class:'g',onclick:()=>show('share')},'📤 Liste jetzt teilen')))}
 
- app.append(head(w));
+ function viewAdd(){
+  let pri=0,up='';const txt=h('span',{class:'mu small'},PRI[0]);
+  const T=h('input',{placeholder:'z.B. ESP32 Board'}),P=h('input',{placeholder:'z.B. 49,99',inputmode:'decimal'}),Lk=h('input',{placeholder:'z.B. amazon.de/…',inputmode:'url'}),I=h('input',{placeholder:'https://…',inputmode:'url'}),F=h('input',{type:'file',accept:'image/*'}),prev=h('div',{class:'prev','aria-hidden':'true'},'🖼');
+  const showPrev=src=>{prev.style.backgroundImage=src?`url("${src.replace(/"/g,'%22')}")`:'';prev.textContent=src?'':'🖼'};
+  I.addEventListener('input',()=>{if(!up)showPrev(okImg(I.value.trim())?I.value.trim():'')});
+  F.addEventListener('change',async()=>{up=F.files[0]?await shrink(F.files[0]):'';showPrev(up||(okImg(I.value.trim())?I.value.trim():''))});
+  P.addEventListener('blur',()=>{P.value=eur(P.value)});
+  return h('div',{class:'box'},h('h3',{},'➕ Neuen Wunsch hinzufügen'),h('p',{class:'mu small'},'Nur der Name ist Pflicht – alles andere ist freiwillig.'),
+   h('div',{class:'form2'},fld('Was wünschst du dir? *',T),fld('Preis',P,'€ wird automatisch ergänzt'),fld('Link zum Shop',Lk,'Wo man es kaufen kann'),fld('Bild-Link',I,'oder unten ein Foto hochladen')),
+   h('div',{class:'imgrow'},prev,fld('Foto hochladen',F)),
+   h('div',{class:'fld'},h('span',{class:'fl'},'Wie wichtig ist dir das?'),starPick(0,v=>{pri=v;txt.textContent=PRI[v]}),h('div',{},txt)),
+   h('button',{class:'full',onclick:async e=>{const t=T.value.trim();if(!t){T.focus();return toast('Bitte gib ein, was du dir wünschst')}burst(e);
+    let l=Lk.value.trim();if(l&&!ok(l))l='https://'+l;w.items.push({id:Date.now(),title:t,link:l,price:eur(P.value),img:up||I.value.trim(),pri});await save();toast('Wunsch hinzugefügt 🎁');show('list')}},'🎁 Zur Liste hinzufügen'))}
 
- // Wunsch hinzufügen
- let pri=0,sp=starPick(0,v=>pri=v);
- const T=h('input',{placeholder:'Produkt *','aria-label':'Produkt'}),Lk=h('input',{placeholder:'Link zum Shop','aria-label':'Link zum Shop',inputmode:'url'}),P=h('input',{placeholder:'Preis (z.B. 49,99)','aria-label':'Preis',inputmode:'decimal'}),I=h('input',{placeholder:'Bild-URL (optional)','aria-label':'Bild-URL',inputmode:'url'}),F=h('input',{type:'file',accept:'image/*','aria-label':'Bild hochladen'});
- P.addEventListener('blur',()=>{P.value=eur(P.value)});
- const starRow=h('p',{class:'mu',style:'margin:6px 0'},'Wie sehr wünschst du es dir? ',sp);
- app.append(h('div',{class:'box noprint'},h('h3',{},'Wunsch hinzufügen'),h('div',{class:'row'},T,Lk,P,I),h('label',{class:'mu'},'oder Bild hochladen ',F),starRow,
-  h('p',{style:'margin:8px 0 0'},h('button',{onclick:async e=>{
-   const t=T.value.trim();if(!t){T.focus();return toast('Bitte einen Produktnamen eingeben')}burst(e);
-   let img=I.value.trim(),l=Lk.value.trim();if(l&&!ok(l))l='https://'+l;if(F.files[0])img=await shrink(F.files[0]);
-   w.items.push({id:Date.now(),title:t,link:l,price:eur(P.value),img,pri});await save();
-   [T,Lk,P,I,F].forEach(x=>x.value='');pri=0;const n=starPick(0,v=>pri=v);sp.replaceWith(n);sp=n;draw();toast('Wunsch hinzugefügt 🎁')}},'Hinzufügen'))));
+ function viewShare(){
+  const text=`🎁 Hier ist meine Wunschliste ${forWhat(w)}! Schau rein und reserviere, was du schenken möchtest: ${url}`,title='Wunschliste von '+w.name;
+  return h('div',{},
+   h('div',{class:'box'},h('h3',{},'📤 Link an Freunde schicken'),h('p',{class:'mu small'},'Tippe auf eine App – die Nachricht mit deinem Link ist schon fertig geschrieben.'),shareButtons(text,url,title),
+    h('p',{class:'mu small',style:'margin:14px 0 4px'},'Oder Link selbst kopieren:'),copyRow(url)),
+   h('div',{class:'box'},h('h3',{},'▦ QR-Code'),h('p',{class:'mu small'},'Freunde scannen ihn mit der Handykamera – oder du schickst ihn als Bild.'),qrBox(url)),
+   h('div',{class:'box'},h('h3',{},'💾 Liste speichern'),h('p',{class:'mu small'},'Beim Drucken kannst du auch „Als PDF speichern“ wählen.'),h('div',{class:'tools'},
+    h('button',{class:'g',onclick:()=>{show('list');setTimeout(()=>print(),500)}},'🖨 Drucken / PDF'),h('button',{class:'g',onclick:()=>exportTxt(w)},'⬇ Als Textdatei'))),
+   h('div',{class:'box'},h('h3',{},'👀 Vorschau'),h('p',{class:'mu small'},'So sieht die Liste für deine Freunde aus (ohne Reservierungen – die bleiben für dich geheim).'),h('button',{class:'g',onclick:()=>go(w.slug)},'Vorschau öffnen')))}
 
- // Teilen & Export
- const qr=h('div',{class:'qr'});
- app.append(h('div',{class:'box noprint'},h('h3',{},'Teilen'),
-  h('p',{class:'mu',style:'margin:0'},'Besucher sehen nur die Liste – ohne Anmeldung. Reservierungen bleiben für dich geheim 🤫'),
-  h('input',{readonly:true,value:url,'aria-label':'Link zum Teilen',onclick:e=>e.target.select()}),
-  h('div',{class:'tools'},
-   h('button',{onclick:async e=>{const b=e.currentTarget;try{await navigator.clipboard.writeText(url);b.textContent='Kopiert ✓';burst(e)}catch{b.textContent='Link markieren & kopieren'}setTimeout(()=>b.textContent='🔗 Link kopieren',2000)}},'🔗 Link kopieren'),
-   h('button',{class:'g',onclick:()=>{if(qr.childElementCount)return put(qr);if(!window.QRCode)return toast('QR-Code konnte nicht geladen werden');new QRCode(qr,{text:url,width:200,height:200,colorDark:'#2b2230',colorLight:'#ffffff',correctLevel:QRCode.CorrectLevel.M})}},'▦ QR-Code'),
-   h('button',{class:'g',onclick:()=>go(w.slug)},'👀 Vorschau'),
-   h('button',{class:'g',onclick:()=>window.print()},'🖨 Drucken / PDF'),
-   h('button',{class:'g',onclick:()=>exportTxt(w)},'⬇ Als Text')),
-  qr));
+ function viewLists(){
+  let arm=false;
+  return h('div',{},
+   h('div',{class:'box'},h('h3',{},'📋 Deine Listen'),h('p',{class:'mu small'},'Tippe auf eine Liste, um sie zu öffnen.'),
+    h('div',{class:'lcards'},lists.map(l=>h('button',{class:'lcard'+(l.slug===cur?' on':''),onclick:()=>{if(l.slug!==cur){setCur(l.slug);ls.set('wl-tab','list');render()}}},
+     h('span',{class:'li','aria-hidden':'true'},icon(l.occasion)),h('span',{class:'lt2'},h('b',{},l.name),h('small',{class:'mu'},`${l.occasion} am ${dmy(l.bd)} · ${l.count} ${l.count===1?'Wunsch':'Wünsche'}`)),
+     h('span',{class:l.slug===cur?'chip sm':'mu small'},l.slug===cur?'Geöffnet':'Öffnen →'))))),
+   h('div',{class:'box'},listForm(w)),
+   h('div',{class:'box'},listForm(null)),
+   lists.length>1&&h('div',{class:'box'},h('h3',{},'🗑 Liste löschen'),h('p',{class:'mu small'},`Löscht „${w.name} – ${w.occasion}“ mit allen Wünschen. Zum Bestätigen zweimal tippen.`),
+    h('button',{class:'g',onclick:async e=>{const b=e.currentTarget;if(!arm){arm=true;b.textContent='Wirklich löschen? Nochmal tippen';setTimeout(()=>{arm=false;b.textContent='Diese Liste löschen'},3500);return}
+     const r=await api('dellist',{token:tok,slug:w.slug});if(r.error)return toast(r.error);setCur(r.slug);toast('Liste gelöscht');render()}},'Diese Liste löschen')))}
 
- // Übersicht, Sortierung, Karten
- const stats=h('div',{class:'stats'}),sortBar=h('div',{class:'tools noprint'}),g=h('div',{class:'grid'});
- const draw=()=>{
-  const list=sort==='price'?[...w.items].sort((a,b)=>{const A=num(a.price),B=num(b.price);return A===B?0:A-B}):w.items;
-  const total=w.items.reduce((s,i)=>s+(isFinite(num(i.price))?num(i.price):0),0);
-  put(stats,h('span',{class:'chip'},`🎁 ${w.items.length} ${w.items.length===1?'Wunsch':'Wünsche'}`),h('span',{class:'chip'},'💶 Gesamt: '+fmt(total)));
-  put(sortBar,
-   h('button',{class:sort==='manual'?'':'g','aria-pressed':String(sort==='manual'),onclick:()=>{sort='manual';ls.set('wl-sort',sort);draw()}},'✋ Eigene Reihenfolge'),
-   h('button',{class:sort==='price'?'':'g','aria-pressed':String(sort==='price'),onclick:()=>{sort='price';ls.set('wl-sort',sort);draw()}},'💶 Nach Preis'));
-  if(!list.length)return put(g,h('p',{class:'mu c empty'},'Noch keine Wünsche – füge oben deinen ersten hinzu ✨'));
-  put(g,list.map((it,i)=>card(it,i,{own:true,drag:sort==='manual',last:i===list.length-1,
-   onDel:async()=>{w.items=w.items.filter(x=>x!==it);await save();draw();toast('Wunsch gelöscht')},
-   onPri:async v=>{it.pri=v;await save()},
-   move:sort==='manual'&&(async dir=>{const j=i+dir;[w.items[i],w.items[j]]=[w.items[j],w.items[i]];await save();draw()})})))};
- // Ziehen & Ablegen (Maus)
- let dragId=null;
- g.addEventListener('dragstart',e=>{const c=e.target.closest?.('.card');if(!c)return;dragId=Number(c.dataset.id);c.classList.add('drag');c.style.transform='';e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',String(dragId))}catch{}});
- g.addEventListener('dragend',()=>{dragId=null;g.querySelectorAll('.drag,.over').forEach(x=>x.classList.remove('drag','over'))});
- g.addEventListener('dragover',e=>{if(dragId==null)return;e.preventDefault();const c=e.target.closest('.card');g.querySelectorAll('.over').forEach(x=>x!==c&&x.classList.remove('over'));if(c&&Number(c.dataset.id)!==dragId)c.classList.add('over')});
- g.addEventListener('drop',async e=>{e.preventDefault();const c=e.target.closest('.card'),from=dragId;dragId=null;if(!c||from==null)return draw();const to=Number(c.dataset.id);if(from===to)return draw();
-  const a=w.items.findIndex(x=>x.id===from),it=w.items.splice(a,1)[0],b=w.items.findIndex(x=>x.id===to);w.items.splice(a<=b?b+1:b,0,it);await save();draw()});
- tilt(g);
- app.append(stats,sortBar,g);draw()}
+ const VIEWS={list:viewList,add:viewAdd,share:viewShare,lists:viewLists};
+ app.append(head(w),bar,body);show(tab)}
 
 /* ---------- Öffentliche Ansicht (Link für Freunde) ---------- */
 function pub(app,w){
  const preview=myLists().includes(w.slug); // Besitzer schaut sich seine eigene Liste an -> Reservierungen verstecken
  if(preview)w.items.forEach(i=>i.res=false);
+ const url=urlOf(w.slug);
  app.append(head(w));
  if(preview)app.append(h('div',{class:'preview c noprint'},'👀 So sehen deine Freunde die Liste. Reservierungen bleiben für dich geheim. ',h('a',{href:'#',style:'color:var(--ac);font-weight:700',onclick:e=>{e.preventDefault();go('edit')}},'Zurück zum Bearbeiten')));
  const stats=h('div',{class:'stats'}),g=h('div',{class:'grid'});
@@ -379,8 +481,13 @@ function pub(app,w){
    const r=await api('reserve',{slug:w.slug,id:it.id,on});if(r.error)return toast(r.error);
    it.res=on;on?ls.set(key,'1'):ls.del(key);if(on){burst(e);toast('Reserviert – danke! 🎉')}draw()}})))};
  tilt(g);
- app.append(stats,!preview&&h('p',{class:'mu c hint noprint'},`Tipp: Klicke „Ich besorge das“, damit nichts doppelt geschenkt wird. ${w.name} sieht das nicht 🤫`),g,
-  h('p',{class:'c foot noprint',style:'margin-top:30px'},h('a',{href:'#',onclick:e=>{e.preventDefault();go(tok?'edit':'')}},tok?'Zu meinen Listen →':'Eigene Wunschliste erstellen →')));
+ app.append(stats,
+  !preview&&w.items.length&&h('div',{class:'how noprint'},h('span',{},h('b',{},'1'),' Geschenk aussuchen'),h('span',{},h('b',{},'2'),' „Ich besorge das“ tippen'),h('span',{},h('b',{},'3'),' Im Shop kaufen')),
+  !preview&&w.items.length&&h('p',{class:'mu c small noprint'},`${w.name} sieht nicht, wer was reserviert hat 🤫`),
+  g,
+  h('div',{class:'box noprint',style:'margin-top:30px'},h('h3',{},'📤 Liste weiterleiten'),h('p',{class:'mu small'},'Schick die Liste an andere Gäste oder die Familie.'),
+   shareButtons(`🎁 Schau mal, das wünscht sich ${w.name} ${forWhat(w)}: ${url}`,url,'Wunschliste von '+w.name)),
+  h('p',{class:'c foot noprint',style:'margin-top:24px'},h('a',{href:'#',onclick:e=>{e.preventDefault();go(tok?'edit':'')}},tok?'Zu meinen Listen →':'Eigene Wunschliste erstellen →')));
  draw()}
 
 /* ---------- Bild verkleinern ---------- */
@@ -388,7 +495,7 @@ const shrink=f=>new Promise(r=>{const i=new Image,u=URL.createObjectURL(f);i.onl
 
 /* ---------- Seite aufbauen ---------- */
 async function render(){
- const id=++rid,app=$('#app');clearInterval(timer);await detect();if(id!==rid)return;
+ const id=++rid,app=$('#app');clearInterval(timer);document.body.classList.remove('hastabs');await detect();if(id!==rid)return;
  const r=routeOf();pubView=!!r&&r!=='edit';nav();
  if(r==='edit'){if(!tok)return go('');return owner(app,id)}
  if(!r){app.replaceChildren();if(tok)return go('edit');return auth(app)}

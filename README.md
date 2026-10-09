@@ -11,7 +11,9 @@ Läuft komplett auf Netlify (kostenlos): Netlify Functions + Netlify Blobs – *
 - ✋ Eigene Reihenfolge (ziehen mit der Maus oder ◀ ▶ am Handy) oder nach Preis sortieren
 - 📋 Mehrere Listen pro Konto (Geburtstag, Weihnachten, Hochzeit, Sonstiges)
 - 💶 Gesamtsumme aller Wünsche
-- ▦ QR-Code zum Teilen, 🔗 Link kopieren
+- 📤 Teilen per WhatsApp, Telegram, SMS, E-Mail oder andere Apps (Nachricht schon fertig geschrieben)
+- ▦ QR-Code anzeigen, als Bild speichern oder direkt verschicken (z.B. WhatsApp)
+- 🧭 Übersichtliche Bereiche: Wünsche · Hinzufügen · Teilen · Listen (am Handy als Leiste unten)
 - 🌙/☀️ Hell- und Dunkel-Design zum Umschalten
 - 🔑 Passwort vergessen über Sicherheitsfrage (ohne E-Mail-Dienst)
 - 🖨 Drucken / als PDF speichern, ⬇ als Textdatei herunterladen
