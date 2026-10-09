@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e0a18">
 <title>Wunschliste 🎁</title>
 <style>
 :root{--bg:#fff3ec;--card:#ffffffb8;--tx:#2b2230;--mu:#7a6f80;--ac:#ff3d81;--ac2:#ffa63d;--ac3:#7c4dff;--bd:#ffffffd9;--in:#ffffffcc;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -51,6 +52,35 @@ input:focus{border-color:var(--ac);box-shadow:0 0 0 4px rgba(255,61,129,.2);tran
 @keyframes pulse{50%{box-shadow:0 0 0 10px rgba(255,61,129,0),0 10px 28px rgba(255,61,129,.55)}}
 @keyframes pop{to{transform:translate(var(--dx),calc(var(--dy) + 220px)) rotate(540deg);opacity:0}}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important}}
+
+/* ---- Handy & Tablet ---- */
+h1,.b strong{overflow-wrap:anywhere}
+input,button,.btn{min-height:44px}
+input[type=file]{min-height:auto;padding:8px}
+@media (hover:none){button:hover,.btn:hover{transform:none}.card:hover{box-shadow:none}}
+@media (max-width:900px){
+ .grid{grid-template-columns:repeat(2,minmax(0,1fr));max-width:640px;margin-left:auto;margin-right:auto}
+ .row{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:560px){
+ header{padding:10px 14px;gap:8px}
+ .logo{font-size:17px;white-space:nowrap}
+ #nav{display:flex;gap:6px}
+ #nav button{padding:8px 11px;font-size:14px;min-height:38px}
+ main{padding:6px 14px 40px}
+ h1{font-size:clamp(24px,8vw,32px);margin-top:12px}
+ .box{padding:18px 14px;border-radius:20px;margin:14px auto}
+ .row{grid-template-columns:1fr}
+ .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+ .im{height:130px;font-size:44px}
+ .b{padding:10px;gap:4px}
+ .b strong{font-size:15px}
+ .b .btn{padding:9px 6px;font-size:14px}
+ .card{border-radius:18px}
+ .f{font-size:18px}
+ body::before,body::after{filter:blur(36px)}
+}
+@media (max-width:360px){.grid{grid-template-columns:1fr}.im{height:170px}}
 </style></head>
 <body>
 <header><div class="logo" id="logo">🎁 Wunschliste</div><div id="nav"></div></header>
@@ -123,7 +153,7 @@ function view(app,w,own){
    h('p',{class:'mu'},'Link zum Teilen (Besucher sehen nur die Liste, ohne Anmeldung):'),h('input',{readonly:'',value:url,onclick:e=>e.target.select()}),
    h('div',{class:'row'},h('button',{onclick:async e=>{try{await navigator.clipboard.writeText(url);e.target.textContent='Kopiert ✓'}catch{e.target.textContent='Link markieren & kopieren'}}},'Link kopieren'),h('button',{class:'g',onclick:()=>go(w.slug)},'So sehen Besucher die Liste'))))}
  app.append(note,g);draw();
- g.addEventListener('pointermove',e=>{const c=e.target.closest('.card');if(!c)return;const r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;c.style.transform=`perspective(700px) rotateY(${x*14}deg) rotateX(${-y*14}deg) translateY(-6px)`});
+ g.addEventListener('pointermove',e=>{if(e.pointerType!=='mouse')return;const c=e.target.closest('.card');if(!c)return;const r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;c.style.transform=`perspective(700px) rotateY(${x*14}deg) rotateX(${-y*14}deg) translateY(-6px)`});
  g.addEventListener('pointerout',e=>{const c=e.target.closest('.card');if(c)c.style.transform=''})}
 
 async function render(){
@@ -136,6 +166,6 @@ async function render(){
 
 $('#logo').onclick=()=>go(tok?'edit':'');
 addEventListener('hashchange',render);addEventListener('popstate',render);
-['🎁','🎈','🎂','🎉','✨','🎀'].flatMap(x=>[x,x]).forEach(e=>document.body.append(h('span',{class:'f',style:`left:${Math.random()*95}%;animation-duration:${12+Math.random()*14}s;animation-delay:-${Math.random()*20}s`},e)));
+['🎁','🎈','🎂','🎉','✨','🎀'].flatMap(x=>innerWidth<560?[x]:[x,x]).forEach(e=>document.body.append(h('span',{class:'f',style:`left:${Math.random()*95}%;animation-duration:${12+Math.random()*14}s;animation-delay:-${Math.random()*20}s`},e)));
 render();
 </script></body></html>
