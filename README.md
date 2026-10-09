@@ -16,6 +16,9 @@ Läuft komplett auf Netlify (kostenlos): Netlify Functions + Netlify Blobs – *
 - 🧭 Übersichtliche Bereiche: Wünsche · Hinzufügen · Teilen · Listen (am Handy als Leiste unten)
 - 🌙/☀️ Hell- und Dunkel-Design zum Umschalten
 - 🔑 Passwort vergessen über Sicherheitsfrage (ohne E-Mail-Dienst)
+- 🔒 Schutz gegen Passwort-Raten: nach 5 Fehlversuchen 15 Minuten Sperre (pro E-Mail, zusätzlich max. 20 pro IP)
+- 🙋 Beim Reservieren freiwillig den eigenen Namen angeben – nur andere Gäste sehen ihn
+- 📲 Als App installierbar (Startbildschirm, eigenes Icon, öffnet auch offline)
 - 🖨 Drucken / als PDF speichern, ⬇ als Textdatei herunterladen
 - 📱 Optimiert für Handy, Tablet und PC
 

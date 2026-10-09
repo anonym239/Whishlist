@@ -10,7 +10,11 @@ const hash = (v, salt) => scryptSync(String(v), salt, 32);
 const same = (hex, v, salt) => timingSafeEqual(Buffer.from(hex, 'hex'), hash(v, salt));
 const rnd = n => randomBytes(n).toString('hex');
 
-export default async req => {
+// Schutz gegen Passwort-Raten: nach zu vielen Fehlversuchen kurz sperren
+const MAX_EMAIL = 5, MAX_IP = 20, LOCK_MS = 15 * 60 * 1000;
+const mins = ms => Math.max(1, Math.ceil(ms / 60000));
+
+export default async (req, context) => {
   if (req.method !== 'POST') return J({ error: 'Nur POST' }, 405);
   let d; try { d = await req.json(); } catch { return J({ error: 'Ungültige Anfrage' }, 400); }
   const st = getStore('wishlist'), a = d.action;
@@ -18,6 +22,17 @@ export default async req => {
   const getW = async s => { const w = await st.get('w:' + str(s, 12), { type: 'json' }); if (w) { w.occasion ||= 'Geburtstag'; w.items = (w.items || []).map(i => ({ pri: 0, res: false, ...i })); } return w; };
   const getU = async e => { const u = await st.get('u:' + str(e, 120).toLowerCase(), { type: 'json' }); if (u && !u.lists) u.lists = u.slug ? [u.slug] : []; return u; };
   const login = async email => { const token = rnd(24); await st.set('s:' + token, email); return token; };
+  const ip = context?.ip || req.headers.get('x-nf-client-connection-ip') || 'unbekannt';
+  // Liefert Minuten bis zur Entsperrung (0 = nicht gesperrt)
+  const lockedFor = async keys => { const now = Date.now(); for (const k of keys) { const f = await st.get('f:' + k, { type: 'json' }); if (f?.until > now) return mins(f.until - now); } return 0; };
+  // Zählt einen Fehlversuch im 15-Minuten-Fenster, gibt verbleibende Versuche zurück
+  const failed = async (k, max) => { const now = Date.now(); let f = await st.get('f:' + k, { type: 'json' });
+    if (!f || now - f.first > LOCK_MS || (f.until && f.until <= now)) f = { n: 0, first: now, until: 0 };
+    f.n++; if (f.n >= max) f.until = now + LOCK_MS; await st.setJSON('f:' + k, f); return max - f.n; };
+  const guard = async email => { const m = await lockedFor(['e:' + email, 'ip:' + ip]); return m ? J({ error: `Zu viele Fehlversuche. Bitte in ${m} Minute${m > 1 ? 'n' : ''} nochmal versuchen.`, locked: m }, 429) : null; };
+  const wrong = async (email, msg) => { const left = await failed('e:' + email, MAX_EMAIL); await failed('ip:' + ip, MAX_IP);
+    if (left <= 0) return J({ error: `Zu viele Fehlversuche. Bitte in ${mins(LOCK_MS)} Minuten nochmal versuchen.`, locked: mins(LOCK_MS) }, 429);
+    return J({ error: msg + (left <= 3 ? ` (noch ${left} Versuch${left > 1 ? 'e' : ''})` : '') }, 401); };
 
   // ---------- öffentlich ----------
   if (a === 'ping') return J({ ok: true });
@@ -32,6 +47,7 @@ export default async req => {
     const w = await getW(d.slug); if (!w) return J({ error: 'Liste nicht gefunden' }, 404);
     const it = w.items.find(i => i.id === Number(d.id)); if (!it) return J({ error: 'Wunsch nicht gefunden' }, 404);
     it.res = !!d.on;
+    if (it.res) { const by = str(d.by, 30); if (by) it.by = by; else delete it.by; } else delete it.by; // Name ist freiwillig
     await st.setJSON('w:' + w.slug, w);
     return J({ ok: true });
   }
@@ -49,8 +65,10 @@ export default async req => {
   }
 
   if (a === 'login') {
-    const u = await getU(d.email);
-    if (!u || !same(u.hash, d.pw ?? '', u.salt)) return J({ error: 'E-Mail oder Passwort falsch' }, 401);
+    const em = str(d.email, 120).toLowerCase(), stop = await guard(em); if (stop) return stop;
+    const u = await getU(em);
+    if (!u || !same(u.hash, d.pw ?? '', u.salt)) return wrong(em, 'E-Mail oder Passwort falsch');
+    await st.delete('f:e:' + em);
     return J({ token: await login(u.email), slug: u.lists[0] });
   }
 
@@ -61,9 +79,11 @@ export default async req => {
     return u.q ? J({ q: u.q }) : J({ error: 'Für dieses Konto ist keine Sicherheitsfrage hinterlegt' }, 400);
   }
   if (a === 'reset') {
-    const u = await getU(d.email); if (!u) return J({ error: 'E-Mail nicht gefunden' }, 404);
+    const em = str(d.email, 120).toLowerCase(), stop = await guard(em); if (stop) return stop;
+    const u = await getU(em); if (!u) return J({ error: 'E-Mail nicht gefunden' }, 404);
     if (!u.qhash) return J({ error: 'Für dieses Konto ist keine Sicherheitsfrage hinterlegt' }, 400);
-    if (!same(u.qhash, str(d.qa, 120).toLowerCase(), u.qsalt)) return J({ error: 'Antwort ist falsch' }, 401);
+    if (!same(u.qhash, str(d.qa, 120).toLowerCase(), u.qsalt)) return wrong(em, 'Antwort ist falsch');
+    await st.delete('f:e:' + em);
     if (String(d.pw ?? '').length < 6) return J({ error: 'Neues Passwort: min. 6 Zeichen' }, 400);
     u.salt = rnd(16); u.hash = hash(d.pw, u.salt).toString('hex');
     await st.setJSON('u:' + u.email, u);
@@ -95,10 +115,10 @@ export default async req => {
   if (!owns) return J({ error: 'Keine Berechtigung' }, 403);
   const w = await getW(slug); if (!w) return J({ error: 'Liste nicht gefunden' }, 404);
 
-  if (a === 'getown') return J({ ...w, items: w.items.map(({ res, ...i }) => i) }); // Reservierungen bleiben geheim
+  if (a === 'getown') return J({ ...w, items: w.items.map(({ res, by, ...i }) => i) }); // Reservierungen bleiben geheim
 
   if (a === 'save') {
-    const res = new Map(w.items.map(i => [i.id, i.res]));
+    const old = new Map(w.items.map(i => [i.id, i]));
     w.items = (Array.isArray(d.items) ? d.items : []).slice(0, 100).map(i => {
       const id = Number(i.id) || Date.now();
       return {
@@ -106,7 +126,7 @@ export default async req => {
         pri: Math.max(0, Math.min(3, Number(i.pri) || 0)),
         link: http(i.link) ? str(i.link, 1000) : '',
         img: (http(i.img) || /^data:image\//.test(i.img || '')) && String(i.img).length < 700000 ? i.img : '',
-        res: !!res.get(id)
+        res: !!old.get(id)?.res, ...(old.get(id)?.by ? { by: old.get(id).by } : {})
       };
     });
     await st.setJSON('w:' + slug, w);
