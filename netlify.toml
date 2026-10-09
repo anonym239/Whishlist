@@ -1,0 +1,11 @@
+[build]
+  publish = "public"
+
+[functions]
+  directory = "netlify/functions"
+
+# /abc123ks -> index.html (Datei-Pfade wie /index.html bleiben unberührt)
+[[redirects]]
+  from = "/:slug"
+  to = "/index.html"
+  status = 200
