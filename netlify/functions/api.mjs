@@ -99,6 +99,24 @@ export default async (req, context) => {
   if (req.method !== 'POST') return J({ error: 'Nur POST' }, 405);
   let d; try { d = await req.json(); } catch { return J({ error: 'Ungültige Anfrage' }, 400); }
   const st = getStore('wishlist'), a = d.action;
+
+  // Einmalige Aufräum-Aktion (vom Betreiber gewünscht): alle Reservierungen und Anteile auf allen Listen aufheben.
+  // Läuft genau einmal beim ersten Aufruf nach dem Update; die Wünsche selbst bleiben unverändert.
+  const MIG = 'mig:reset-reservations-2026-11-08';
+  if (!(await st.get(MIG))) {
+    const { blobs } = await st.list({ prefix: 'w:' }); let changed = 0;
+    for (const b of blobs) {
+      const w = await st.get(b.key, { type: 'json' }); if (!w) continue; let ch = false;
+      for (const i of w.items || []) {
+        if (i.res || i.parts?.length || i.by || i.rk) ch = true;
+        ['by', 'rk', 'rc', 'rv', 'parts'].forEach(k => delete i[k]); i.res = false;
+        for (const x of i.extras || []) { if (x.res || x.by) ch = true; ['by', 'rk', 'rc', 'rv'].forEach(k => delete x[k]); x.res = false; }
+      }
+      if (ch) { await st.setJSON(b.key, w); changed++; }
+    }
+    await st.setJSON(MIG, { at: new Date().toISOString(), lists: blobs.length, changed });
+    console.log(`[aufräumen] Alle Reservierungen aufgehoben: ${changed} von ${blobs.length} Listen geändert`);
+  }
   // ältere Einträge (erste Version) automatisch ergänzen
   const getW = async s => { const w = await st.get('w:' + str(s, 12), { type: 'json' }); if (w) { w.occasion ||= 'Geburtstag'; w.items = (w.items || []).map(i => ({ pri: 0, res: false, ...i })); } return w; };
   const getU = async e => { const u = await st.get('u:' + str(e, 120).toLowerCase(), { type: 'json' }); if (u && !u.lists) u.lists = u.slug ? [u.slug] : []; return u; };

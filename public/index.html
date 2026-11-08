@@ -205,6 +205,12 @@ body.hastabs .sitefoot{padding-bottom:110px}
 @media (max-width:760px){body.hastabs main{padding-bottom:20px}}
 .code{font-size:12.5px;text-align:center;width:100%}.code b{letter-spacing:.12em;color:var(--tx)}
 .xact .code{text-align:right}
+.bigcode{font-family:var(--serif);font-size:44px;letter-spacing:.18em;text-align:center;padding:14px 10px;border:1.5px dashed var(--bd2);border-radius:14px;background:var(--bg);user-select:all}
+.csave{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}
+.code2{font-family:var(--serif);font-size:22px;letter-spacing:.12em;user-select:all;white-space:nowrap}
+.mybtn{cursor:pointer;min-height:auto;color:var(--tx);font:inherit;font-weight:600;font-size:14px;gap:6px}
+.mybtn:hover{transform:none;box-shadow:none;background:var(--sf2)}
+.mybtn svg.i{width:15px;height:15px}
 .rnote{font-size:12px;line-height:1.35}
 .mv{display:flex;gap:6px;width:100%;padding-top:10px}
 .mv button{flex:1;min-height:36px;padding:4px}
@@ -478,7 +484,7 @@ function card(it,i,o){
   const askCode=mode=>{const C=h('input',{placeholder:'Dein Code, z.B. K7M2QX','aria-label':'Dein Code',maxlength:'12',autocapitalize:'characters',autocomplete:'off',style:'text-transform:uppercase;letter-spacing:.12em'});
    const send=h('button',{class:'rbtn',onclick:e=>{const c=C.value.trim();if(!c)return C.focus();mode==='res'?o.onRes(e,false,'',c):o.onChip(e,false,'','',c)}},mode==='res'?'Reservierung aufheben':'Anteil zurücknehmen');
    C.addEventListener('keydown',e=>{if(e.key==='Enter')send.click();if(e.key==='Escape')base()});
-   put(slot,h('small',{class:'mu rnote'},'Den Code hast du beim '+(mode==='res'?'Reservieren':'Dazugeben')+' bekommen.'),C,send,h('button',{class:'g rbtn',onclick:base},'Abbrechen'));setTimeout(()=>C.focus(),50)};
+   put(slot,h('small',{class:'mu rnote'},'Den Code hast du beim '+(mode==='res'?'Reservieren':'Dazugeben')+' bekommen. Vergessen? Öffne den Link auf dem Gerät, mit dem du reserviert hast → „Meine Reservierungen & Codes“.'),C,send,h('button',{class:'g rbtn',onclick:base},'Abbrechen'));setTimeout(()=>C.focus(),50)};
   const myCode=ls.get(`wl-code:${o.slug}:${it.id}`),myChipCode=myPart?.code;
   const base=()=>put(slot,it.res?[h('button',{class:'g rbtn',disabled:!mine,onclick:e=>o.onRes(e,false)},mine?'Reservierung aufheben':'Schon vergeben'),
      mine?myCode&&h('small',{class:'mu code'},'Dein Code: ',h('b',{},myCode)):h('button',{class:'g rbtn soft',onclick:()=>askCode('res')},'Das war ich – mit Code aufheben')]
@@ -509,6 +515,44 @@ function card(it,i,o){
     o.move&&h('button',{class:'g',title:'Nach vorne','aria-label':'Nach vorne',disabled:i===0,onclick:()=>o.move(-1)},'←'),
     h('button',{class:'g gotb',title:'Als bekommen markieren','aria-label':'Als bekommen markieren',onclick:o.onGot},ico('check'),h('span',{class:'lg'},'Bekommen')),
     o.move&&h('button',{class:'g',title:'Nach hinten','aria-label':'Nach hinten',disabled:o.last,onclick:()=>o.move(1)},'→'))))}
+
+/* Allgemeines Fenster (am Handy von unten) */
+function sheetOpen(kicker,title,body,foot){
+ const prevFocus=document.activeElement;
+ const close=()=>{bg.remove();document.removeEventListener('keydown',esc);document.body.classList.remove('noscroll');prevFocus?.focus?.()};
+ const esc=e=>{if(e.key==='Escape')close()};
+ const x=h('button',{class:'g icon xclose','aria-label':'Schließen',onclick:close},ico('x'));
+ const sheet=h('div',{class:'sheet',role:'dialog','aria-modal':'true','aria-label':title},
+  h('div',{class:'shead'},h('div',{},h('span',{class:'xk'},kicker),h('h3',{},title)),x),h('div',{class:'sbody'},body),foot&&h('div',{class:'sfoot'},foot));
+ const bg=h('div',{class:'sheetbg',onclick:e=>{if(e.target===bg)close()}},sheet);
+ document.body.append(bg);document.body.classList.add('noscroll');document.addEventListener('keydown',esc);x.focus();return close}
+/* Code sichern: kopieren oder an sich selbst schicken */
+function codeSave(text){
+ const e=encodeURIComponent;
+ return h('div',{class:'csave'},
+  h('button',{class:'g xs',onclick:async ev=>{const b=ev.currentTarget;try{await navigator.clipboard.writeText(text);b.textContent='✓ Kopiert'}catch{b.textContent='Bitte abschreiben'}setTimeout(()=>b.textContent='Kopieren',2000)}},'Kopieren'),
+  h('a',{class:'btn g xs',href:'https://wa.me/?text='+e(text),target:'_blank',rel:'noopener noreferrer'},'An mich per WhatsApp'),
+  h('a',{class:'btn g xs',href:'mailto:?subject='+e('Mein Reservierungs-Code')+'&body='+e(text)},'Per E-Mail'),
+  navigator.share&&h('button',{class:'g xs',onclick:()=>navigator.share({title:'Mein Reservierungs-Code',text}).catch(()=>{})},'Teilen …'))}
+function codeDialog(code,what,w){
+ const text=`Mein Code für die Wunschliste von ${w.name}: ${code}\n${what}\n${urlOf(w.slug)}`;
+ const close=sheetOpen('Geschafft – danke!',what,[h('p',{class:'mu small',style:'margin:0'},'Mit diesem Code kannst du es später wieder aufheben – auch auf einem anderen Handy oder in einer anderen App:'),
+  h('div',{class:'bigcode','aria-label':'Dein Code'},code),codeSave(text),
+  h('p',{class:'mu small',style:'margin:0'},'Auf diesem Gerät findest du ihn jederzeit unter „Meine Reservierungen & Codes“.')],
+  h('button',{class:'full',style:'margin:0',onclick:()=>close()},'Fertig'))}
+// Alle eigenen Reservierungen/Anteile dieser Liste (in diesem Browser gespeichert)
+function myRes(w){const out=[];
+ for(const it of w.items){const c=ls.get(`wl-code:${w.slug}:${it.id}`);if(c&&it.res)out.push({what:it.title,kind:'Reserviert',code:c});
+  let mp=null;try{mp=JSON.parse(ls.get(`wl-c:${w.slug}:${it.id}`)||'null')}catch{}
+  if(mp?.code&&(it.parts||[]).some(p=>p.pid===mp.pid)){const p=it.parts.find(p=>p.pid===mp.pid);out.push({what:it.title,kind:'Dein Anteil: '+fmt(+p.amt),code:mp.code})}
+  for(const x of it.extras||[]){const xc=ls.get(`wl-code:${w.slug}:${it.id}:${x.xid}`);if(xc&&x.res)out.push({what:x.title,kind:'Zubehör zu „'+it.title+'“',code:xc})}}
+ return out}
+function myResSheet(w){const list=myRes(w);
+ const all=`Meine Codes für die Wunschliste von ${w.name}:\n`+list.map(r=>`• ${r.what} (${r.kind}): ${r.code}`).join('\n')+`\n${urlOf(w.slug)}`;
+ sheetOpen('Nur auf diesem Gerät sichtbar','Meine Reservierungen & Codes',list.length?[
+  ...list.map(r=>h('div',{class:'xrow'},h('div',{class:'xt'},h('b',{},r.what),h('small',{class:'mu'},r.kind)),h('div',{class:'code2'},r.code))),
+  h('p',{class:'mu small',style:'margin:4px 0 0'},'Schick dir die Codes am besten selbst – dann hast du sie überall:'),codeSave(all)]
+  :[h('p',{class:'mu',style:'margin:0'},'Auf diesem Gerät hast du hier noch nichts reserviert.'),h('p',{class:'mu small',style:'margin:0'},'Hast du auf einem anderen Handy oder in einer anderen App reserviert (z.B. im WhatsApp-Browser)? Öffne den Link dort – dann siehst du deine Codes unter „Meine Reservierungen & Codes“.')])}
 
 /* Fenster: Wunsch + Zubehör (Gäste können einzelnes Zubehör reservieren) */
 function extrasSheet(it,o={}){
@@ -766,7 +810,9 @@ function pub(app,w){
   if(!used.some(([k])=>k===flt))flt='all';
   const list=all.filter(i=>B.find(([k])=>k===flt)[2](num(i.price)));
   const r=w.items.filter(i=>i.res||isFull(i)).length;
-  put(stats,h('span',{class:'chip'},`${w.items.length} ${w.items.length===1?'Wunsch':'Wünsche'}`),!preview&&w.items.length&&h('span',{class:'chip'},`${r} von ${w.items.length} vergeben`));
+  const mr=preview?[]:myRes(w);
+  put(stats,h('span',{class:'chip'},`${w.items.length} ${w.items.length===1?'Wunsch':'Wünsche'}`),!preview&&w.items.length&&h('span',{class:'chip'},`${r} von ${w.items.length} vergeben`),
+   !preview&&w.items.length&&h('button',{class:'chip mybtn',onclick:()=>myResSheet(w)},ico('lock'),mr.length?`Meine Reservierungen & Codes (${mr.length})`:'Meine Reservierungen & Codes'));
   put(filt,used.length>1&&[['all','Alle'],...used].map(([k,l])=>h('button',{class:'fchip'+(k===flt?' on':''),'aria-pressed':String(k===flt),onclick:()=>{flt=k;ls.set('wl-flt:'+w.slug,k);draw()}},l)));
   if(!all.length)return put(g,h('p',{class:'mu c empty'},'Noch keine Wünsche – bald gibt es hier was zu sehen ✨'));
   if(!list.length)return put(g,h('p',{class:'mu c empty'},'In dieser Preisklasse gibt es nichts.'));
@@ -774,16 +820,16 @@ function pub(app,w){
    onRes:async(e,on,by,code)=>{const key=`wl-r:${w.slug}:${it.id}`,ck=`wl-code:${w.slug}:${it.id}`;
     const r=await api('guest',{op:'res',slug:w.slug,id:it.id,on,by:on?by:'',key:ls.get(key)||'',code:code||''});if(r.error){toast(r.error,4000);return r.needCode?null:refresh()}
     it.res=on;if(on&&by)it.by=by;else delete it.by;
-    if(on){ls.set(key,r.key||'1');r.code?ls.set(ck,r.code):ls.del(ck);burst(e);toast(r.code?`Reserviert – danke! Dein Code: ${r.code}. Damit kannst du die Reservierung auch auf einem anderen Gerät aufheben.`:(by?`Danke, ${by}! Reserviert 🎉`:'Reserviert – danke! 🎉'),r.code?9000:2600)}
+    if(on){ls.set(key,r.key||'1');r.code?ls.set(ck,r.code):ls.del(ck);burst(e);r.code?codeDialog(r.code,'Reserviert: '+it.title,w):toast(by?`Danke, ${by}! Reserviert 🎉`:'Reserviert – danke! 🎉')}
     else{ls.del(key);ls.del(ck);toast('Reservierung aufgehoben')}draw()},
    onChip:async(e,on,by,amt,code)=>{const key=`wl-c:${w.slug}:${it.id}`;let mp=null;try{mp=JSON.parse(ls.get(key)||'null')}catch{}
     const r=await api('guest',{op:'chip',slug:w.slug,id:it.id,on,by:on?by:'',amt,pid:mp?.pid||'',key:mp?.key||'',code:code||''});if(r.error){toast(r.error,4000);if(!/Betrag|Code|Nur wer/.test(r.error))refresh();return}
-    if(on){ls.set(key,JSON.stringify({pid:r.pid,key:r.key,code:r.code}));it.parts=[...(it.parts||[]),{pid:r.pid,amt:Math.round(Number(String(amt).replace(',','.'))*100)/100,...(by?{by}:{})}];toast(r.code?`Danke – du bist dabei! Dein Code: ${r.code}. Damit kannst du deinen Anteil auch auf einem anderen Gerät zurücknehmen.`:'Danke! Du bist dabei 🎉',r.code?9000:2600)}
+    if(on){ls.set(key,JSON.stringify({pid:r.pid,key:r.key,code:r.code}));it.parts=[...(it.parts||[]),{pid:r.pid,amt:Math.round(Number(String(amt).replace(',','.'))*100)/100,...(by?{by}:{})}];r.code?codeDialog(r.code,`Dein Anteil: ${fmt(Math.round(Number(String(amt).replace(',','.'))*100)/100)} für ${it.title}`,w):toast('Danke! Du bist dabei 🎉')}
     else{ls.del(key);toast('Anteil zurückgenommen');return refresh()}draw()},
    onXRes:async(it2,x,on,code)=>{const key=`wl-r:${w.slug}:${it2.id}:${x.xid}`,ck=`wl-code:${w.slug}:${it2.id}:${x.xid}`,by=ls.get('wl-gname')||'';
     const r=await api('guest',{op:'res',slug:w.slug,id:it2.id,xid:x.xid,on,by:on?by:'',key:ls.get(key)||'',code:code||''});if(r.error){toast(r.error,4000);if(!r.needCode)refresh();return false}
     x.res=on;if(on&&by)x.by=by;else delete x.by;
-    if(on){ls.set(key,r.key||'1');r.code&&ls.set(ck,r.code);toast(r.code?`Zubehör reserviert – danke! Dein Code: ${r.code}`:'Zubehör reserviert – danke!',r.code?7000:2600)}else{ls.del(key);ls.del(ck);toast('Reservierung aufgehoben')}draw();return true}})))};
+    if(on){ls.set(key,r.key||'1');r.code&&ls.set(ck,r.code);toast(r.code?`Zubehör reserviert – danke! Dein Code: ${r.code} (findest du auch unter „Meine Reservierungen & Codes“)`:'Zubehör reserviert – danke!',r.code?6000:2600)}else{ls.del(key);ls.del(ck);toast('Reservierung aufgehoben')}draw();return true}})))};
  app.append(stats,
   !preview&&w.items.length&&h('div',{class:'how noprint'},h('span',{},h('b',{},'1'),' Geschenk aussuchen'),h('span',{},h('b',{},'2'),' „Ich besorge das“ tippen'),h('span',{},h('b',{},'3'),' Im Shop kaufen')),
   !preview&&w.items.length&&h('p',{class:'mu c small noprint'},`${w.name} sieht nicht, wer was reserviert hat. Teure Wünsche könnt ihr auch zusammenlegen.`),
