@@ -1,6 +1,6 @@
 // Backend: Netlify Function + Netlify Blobs (kostenlos, kein API-Key, keine externe DB)
 import { getStore } from '@netlify/blobs';
-import { scryptSync, randomBytes, timingSafeEqual } from 'node:crypto';
+import { scryptSync, randomBytes, timingSafeEqual, createHash } from 'node:crypto';
 import { lookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
 
@@ -67,6 +67,25 @@ const isDate = s => /^\d{4}-\d{2}-\d{2}$/.test(s || '');
 const hash = (v, salt) => scryptSync(String(v), salt, 32);
 const same = (hex, v, salt) => timingSafeEqual(Buffer.from(hex, 'hex'), hash(v, salt));
 const rnd = n => randomBytes(n).toString('hex');
+const sha = v => createHash('sha256').update(String(v)).digest('hex');
+const DAY = 86400000, SESSION_MS = 30 * DAY;
+const isImg = u => http(u) || /^\/img\/[a-f0-9]{32}$/.test(u || '') || /^data:image\//.test(u || '');
+
+// Was Gäste sehen dürfen (geheime Schlüssel nie herausgeben, bekommene Wünsche ausblenden)
+const forGuests = w => ({ ...w, items: w.items.filter(i => !i.got).map(({ rk, got, ...i }) => ({ ...i,
+  parts: (i.parts || []).map(({ rk, ...p }) => p), extras: (i.extras || []).map(({ rk, ...x }) => x) })) });
+// Was der Besitzer sieht (keine Reservierungen – die Überraschung bleibt)
+const forOwner = w => ({ ...w, items: w.items.map(({ res, by, rk, parts, ...i }) => ({ ...i, extras: (i.extras || []).map(({ res, by, rk, ...x }) => x) })) });
+
+// Hochgeladene Fotos getrennt ablegen (Liste bleibt klein und schnell)
+const storeImg = async u => {
+  if (!/^data:image\//.test(u || '')) return isImg(u) ? u : '';
+  const m = u.match(/^data:(image\/(?:jpeg|png|webp|gif));base64,([a-z0-9+/=]+)$/i); if (!m) return '';
+  const buf = Buffer.from(m[2], 'base64'); if (!buf.length || buf.length > 600000) return '';
+  const key = sha(u).slice(0, 32);
+  await getStore('images').set(key, buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.length), { metadata: { type: m[1] } });
+  return '/img/' + key;
+};
 
 // Schutz gegen Passwort-Raten: nach zu vielen Fehlversuchen kurz sperren
 const MAX_EMAIL = 5, MAX_IP = 20, LOCK_MS = 15 * 60 * 1000;
@@ -79,7 +98,17 @@ export default async (req, context) => {
   // ältere Einträge (erste Version) automatisch ergänzen
   const getW = async s => { const w = await st.get('w:' + str(s, 12), { type: 'json' }); if (w) { w.occasion ||= 'Geburtstag'; w.items = (w.items || []).map(i => ({ pri: 0, res: false, ...i })); } return w; };
   const getU = async e => { const u = await st.get('u:' + str(e, 120).toLowerCase(), { type: 'json' }); if (u && !u.lists) u.lists = u.slug ? [u.slug] : []; return u; };
-  const login = async email => { const token = rnd(24); await st.set('s:' + token, email); return token; };
+  const login = async email => { const token = rnd(24); await st.setJSON('s:' + token, { email, exp: Date.now() + SESSION_MS }); return token; };
+  // Anmeldung prüfen: läuft nach 30 Tagen ohne Nutzung ab (ältere Anmeldungen werden umgestellt)
+  const session = async tk => {
+    if (!/^[a-f0-9]{48}$/.test(tk)) return null;
+    const raw = await st.get('s:' + tk); if (!raw) return null;
+    let s; try { s = raw.startsWith('{') ? JSON.parse(raw) : { email: raw, exp: 0 }; } catch { return null; }
+    const now = Date.now();
+    if (s.exp && s.exp < now) { await st.delete('s:' + tk); return null; }
+    if (!s.exp || s.exp - now < SESSION_MS / 2) await st.setJSON('s:' + tk, { email: s.email, exp: now + SESSION_MS });
+    return s.email;
+  };
   const ip = context?.ip || req.headers.get('x-nf-client-connection-ip') || 'unbekannt';
   // Liefert Minuten bis zur Entsperrung (0 = nicht gesperrt)
   const lockedFor = async keys => { const now = Date.now(); for (const k of keys) { const f = await st.get('f:' + k, { type: 'json' }); if (f?.until > now) return mins(f.until - now); } return 0; };
@@ -100,17 +129,43 @@ export default async (req, context) => {
 
   if (a === 'get') {
     const w = await getW(d.slug);
-    return w ? J(w) : J({ error: 'Liste nicht gefunden' }, 404);
+    return w ? J(forGuests(w)) : J({ error: 'Liste nicht gefunden' }, 404);
   }
 
-  // Gäste reservieren ein Geschenk (der Besitzer sieht das nicht)
-  if (a === 'reserve') {
+  // Gäste: reservieren (ganzer Wunsch oder einzelnes Zubehör) und zusammenlegen.
+  // Wer reserviert, bekommt einen geheimen Schlüssel – nur damit lässt sich die Reservierung wieder aufheben.
+  if (a === 'guest' || a === 'reserve') {
     const w = await getW(d.slug); if (!w) return J({ error: 'Liste nicht gefunden' }, 404);
-    const it = w.items.find(i => i.id === Number(d.id)); if (!it) return J({ error: 'Wunsch nicht gefunden' }, 404);
-    it.res = !!d.on;
-    if (it.res) { const by = str(d.by, 30); if (by) it.by = by; else delete it.by; } else delete it.by; // Name ist freiwillig
-    await st.setJSON('w:' + w.slug, w);
-    return J({ ok: true });
+    const it = w.items.find(i => i.id === Number(d.id) && !i.got); if (!it) return J({ error: 'Wunsch nicht gefunden' }, 404);
+    const op = a === 'reserve' ? 'res' : d.op, key = str(d.key, 64), by = str(d.by, 30), done = async o => { await st.setJSON('w:' + w.slug, w); return J({ ok: true, ...o }); };
+    const t = d.xid != null && d.xid !== '' ? (it.extras || []).find(x => x.xid === Number(d.xid)) : it;
+    if (!t) return J({ error: 'Zubehör nicht gefunden' }, 404);
+    if (op === 'res') {
+      if (d.on) {
+        if (t.res) return J({ error: 'Das hat gerade schon jemand reserviert' }, 409);
+        if (t === it && it.parts?.length) return J({ error: 'Hier wird schon zusammengelegt – gib einfach auch etwas dazu' }, 409);
+        const k = rnd(16); t.res = true; t.rk = sha(k); if (by) t.by = by; else delete t.by;
+        return done({ key: k });
+      }
+      if (!t.res) return J({ ok: true });
+      if (t.rk && sha(key) !== t.rk) return J({ error: 'Nur wer reserviert hat, kann die Reservierung aufheben' }, 403);
+      t.res = false; delete t.by; delete t.rk; return done();
+    }
+    if (op === 'chip' && t === it) {
+      it.parts ||= [];
+      if (d.on) {
+        if (it.res) return J({ error: 'Das hat schon jemand komplett reserviert' }, 409);
+        const amt = Math.round(Number(String(d.amt ?? '').replace(',', '.')) * 100) / 100;
+        if (!(amt >= 1 && amt <= 10000)) return J({ error: 'Bitte einen Betrag zwischen 1 und 10.000 € angeben' }, 400);
+        if (it.parts.length >= 30) return J({ error: 'Es geben schon sehr viele etwas dazu' }, 400);
+        const k = rnd(16), pid = rnd(4); it.parts.push({ pid, amt, ...(by ? { by } : {}), rk: sha(k) });
+        return done({ key: k, pid });
+      }
+      const p = it.parts.find(p => p.pid === str(d.pid, 8)); if (!p) return J({ ok: true });
+      if (sha(key) !== p.rk) return J({ error: 'Nur wer etwas dazugegeben hat, kann es zurücknehmen' }, 403);
+      it.parts = it.parts.filter(x => x !== p); return done();
+    }
+    return J({ error: 'Unbekannte Aktion' }, 400);
   }
 
   if (a === 'register') {
@@ -151,8 +206,10 @@ export default async (req, context) => {
     return J({ token: await login(u.email), slug: u.lists[0] });
   }
 
+  if (a === 'logout') { const tk = str(d.token, 64); if (/^[a-f0-9]{48}$/.test(tk)) await st.delete('s:' + tk); return J({ ok: true }); }
+
   // ---------- ab hier angemeldet ----------
-  const email = await st.get('s:' + str(d.token, 64));
+  const email = await session(str(d.token, 64));
   const u = email && await getU(email);
   if (!u) return J({ error: 'Nicht angemeldet' }, 401);
   const slug = str(d.slug, 12), owns = (u.lists || []).includes(slug);
@@ -176,21 +233,38 @@ export default async (req, context) => {
   if (!owns) return J({ error: 'Keine Berechtigung' }, 403);
   const w = await getW(slug); if (!w) return J({ error: 'Liste nicht gefunden' }, 404);
 
-  if (a === 'getown') return J({ ...w, items: w.items.map(({ res, by, ...i }) => i) }); // Reservierungen bleiben geheim
+  if (a === 'getown') return J(forOwner(w)); // Reservierungen bleiben geheim
 
   if (a === 'save') {
     const old = new Map(w.items.map(i => [i.id, i]));
-    w.items = (Array.isArray(d.items) ? d.items : []).slice(0, 100).map(i => {
-      const id = Number(i.id) || Date.now();
-      return {
+    const keep = o => o ? { res: !!o.res, ...(o.by ? { by: o.by } : {}), ...(o.rk ? { rk: o.rk } : {}) } : { res: false };
+    const items = [];
+    for (const i of (Array.isArray(d.items) ? d.items : []).slice(0, 100)) {
+      const id = Number(i.id) || Date.now(), o = old.get(id), oldX = new Map((o?.extras || []).map(x => [x.xid, x]));
+      const extras = [];
+      for (const x of (Array.isArray(i.extras) ? i.extras : []).slice(0, 8)) {
+        if (!str(x?.title, 80)) continue;
+        const xid = Number.isSafeInteger(Number(x.xid)) && Number(x.xid) > 0 ? Number(x.xid) : Date.now() * 10 + extras.length;
+        extras.push({ xid, title: str(x.title, 80), why: str(x.why, 60), price: str(x.price, 20), link: http(x.link) ? str(x.link, 1000) : '',
+          img: String(x.img || '').length < 300000 ? await storeImg(x.img) : '', ...keep(oldX.get(xid)) });
+      }
+      items.push({
         id, title: str(i.title, 120), price: str(i.price, 20),
-        pri: Math.max(0, Math.min(5, Number(i.pri) || 0)), top: !!i.top, note: str(i.note, 140),
-        extras: (Array.isArray(i.extras) ? i.extras : []).slice(0, 8).map(x => ({ title: str(x?.title, 80), why: str(x?.why, 60), price: str(x?.price, 20), link: http(x?.link) ? str(x.link, 1000) : '', img: (http(x?.img) || /^data:image\//.test(x?.img || '')) && String(x.img).length < 300000 ? x.img : '' })).filter(x => x.title),
+        pri: Math.max(0, Math.min(5, Number(i.pri) || 0)), top: !!i.top, got: !!i.got, note: str(i.note, 140), extras,
         link: http(i.link) ? str(i.link, 1000) : '',
-        img: (http(i.img) || /^data:image\//.test(i.img || '')) && String(i.img).length < 700000 ? i.img : '',
-        res: !!old.get(id)?.res, ...(old.get(id)?.by ? { by: old.get(id).by } : {})
-      };
-    });
+        img: String(i.img || '').length < 700000 ? await storeImg(i.img) : '',
+        ...keep(o), ...(o?.parts?.length ? { parts: o.parts } : {})
+      });
+    }
+    w.items = items;
+    await st.setJSON('w:' + slug, w);
+    // Bild-Adressen zurückgeben, damit die Seite keine Fotos doppelt hochlädt
+    return J({ ok: true, items: items.map(i => ({ id: i.id, img: i.img, extras: i.extras.map(x => ({ xid: x.xid, img: x.img })) })) });
+  }
+
+  // Neue Runde: bekommene Wünsche entfernen, alle Reservierungen zurücksetzen
+  if (a === 'newround') {
+    w.items = w.items.filter(i => !i.got).map(({ res, by, rk, parts, ...i }) => ({ ...i, res: false, extras: (i.extras || []).map(({ res, by, rk, ...x }) => ({ ...x, res: false })) }));
     await st.setJSON('w:' + slug, w);
     return J({ ok: true });
   }

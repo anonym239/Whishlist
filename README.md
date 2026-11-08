@@ -12,6 +12,12 @@ Läuft komplett auf Netlify (kostenlos): Netlify Functions + Netlify Blobs – *
 - 💬 Kleine persönliche Nachricht pro Wunsch (z.B. „Mama, bitte – das brauche ich!“)
 - ⭐ 1–5 Sterne: wie sehr du dir etwas wünschst
 - ✅ **Reservieren:** Freunde markieren „Ich besorge das“ – du als Besitzer siehst das nicht (Überraschung bleibt)
+- 🔐 Nur wer reserviert hat, kann die Reservierung wieder aufheben (geheimer Schlüssel im Browser des Gastes)
+- 🧩 Zubehör einzeln reservieren (z.B. nur die SD-Karte)
+- 🤝 Zusammenlegen: mehrere Gäste geben Beträge zu einem teuren Wunsch, mit Fortschrittsbalken
+- 💶 Preisfilter für Gäste (bis 20 €, 20–50 €, …)
+- ✓ Wünsche als „bekommen“ markieren, danach „Neue Runde starten“ (z.B. fürs nächste Jahr)
+- 🔗 Schöne Link-Vorschau in WhatsApp & Co. (Name, Anlass, Bild des TOP-Wunschs)
 - ⏱ Live-Countdown (Tage, Stunden, Minuten, Sekunden) + Konfetti-Regen am großen Tag
 - ✋ Eigene Reihenfolge (ziehen mit der Maus oder ◀ ▶ am Handy) oder nach Preis sortieren
 - 📋 Mehrere Listen pro Konto (Geburtstag, Weihnachten, Hochzeit, Sonstiges)
@@ -21,6 +27,7 @@ Läuft komplett auf Netlify (kostenlos): Netlify Functions + Netlify Blobs – *
 - 🧭 Übersichtliche Bereiche: Wünsche · Hinzufügen · Teilen · Listen (am Handy als Leiste unten)
 - 🌙/☀️ Hell- und Dunkel-Design zum Umschalten
 - 🔑 Passwort vergessen über Sicherheitsfrage (ohne E-Mail-Dienst)
+- ⏳ Anmeldung läuft nach 30 Tagen ohne Nutzung ab, Abmelden beendet sie auch auf dem Server
 - 🔒 Schutz gegen Passwort-Raten: nach 5 Fehlversuchen 15 Minuten Sperre (pro E-Mail, zusätzlich max. 20 pro IP)
 - 🙋 Beim Reservieren freiwillig den eigenen Namen angeben – nur andere Gäste sehen ihn
 - 📲 Als App installierbar (Startbildschirm, eigenes Icon, öffnet auch offline)
@@ -45,4 +52,7 @@ gh repo create wishlist --public --source=. --push
 ## Struktur
 - `public/index.html` – komplette Seite
 - `netlify/functions/api.mjs` – Anmeldung & Speicherung (scrypt-Passwörter)
+- `netlify/functions/img.mjs` – liefert hochgeladene Fotos aus (`/img/…`, getrennt gespeichert)
+- `netlify/functions/page.mjs` – Listen-Links (`/abc123`) mit Link-Vorschau für WhatsApp & Co.
+- `public/datenschutz.html` – Datenschutzerklärung (Platzhalter für Name/Anschrift ausfüllen!)
 - `netlify.toml` – Build & Weiterleitung `/<listen-id>` → Seite
