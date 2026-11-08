@@ -377,7 +377,7 @@ const setTheme=t=>{root.dataset.theme=t;ls.set('wl-theme',t);nav()};
 
 /* ---------- Backend: Netlify-Function (/api). Ohne Backend (Vorschau) -> Demo-Modus im Browser ---------- */
 const L={
- db(){const db=JSON.parse(ls.get('wl-db')||'{"u":{},"w":{}}');for(const u of Object.values(db.u))if(!u.lists)u.lists=u.slug?[u.slug]:[];for(const w of Object.values(db.w)){w.occasion=w.occasion||'Geburtstag';w.items=(w.items||[]).map(i=>({pri:0,res:false,...i}))}return db},
+ db(){const db=JSON.parse(ls.get('wl-db')||'{"u":{},"w":{}}');for(const u of Object.values(db.u))if(!u.lists)u.lists=u.slug?[u.slug]:[];for(const w of Object.values(db.w)){w.occasion=w.occasion||'Geburtstag';w.items=(w.items||[]).map(i=>({pri:0,res:false,...i,extras:(i.extras||[]).map((x,k)=>({...x,xid:x.xid>0?x.xid:i.id*100+k}))}))}return db},
  run(a,d){
   const db=L.db(),sv=()=>ls.set('wl-db',JSON.stringify(db)),cp=o=>JSON.parse(JSON.stringify(o)),em=String(d.email||'').trim().toLowerCase();
   const mk=()=>Array.from({length:10},()=>'abcdefghijklmnopqrstuvwxyz0123456789'[Math.random()*36|0]).join('');
@@ -394,7 +394,7 @@ const L={
   if(a==='resetq'){const u=db.u[em];return u?{q:u.q||'Sicherheitsfrage'}:{error:'E-Mail nicht gefunden'}}
   if(a==='get'){const w=db.w[d.slug];if(!w)return{error:'Liste nicht gefunden'};const c=cp(w);const z=o=>['rk','rc','rv'].forEach(k=>delete o[k]);c.items=c.items.filter(i=>!i.got).map(i=>{z(i);(i.parts||[]).forEach(z);(i.extras||[]).forEach(z);return i});return c}
   if(a==='logout')return{ok:true};
-  if(a==='guest'){const it=db.w[d.slug]?.items.find(i=>i.id===Number(d.id)&&!i.got);if(!it)return{error:'Wunsch nicht gefunden'};const t=d.xid!=null&&d.xid!==''?(it.extras||[]).find(x=>x.xid===Number(d.xid)):it;if(!t)return{error:'Zubehör nicht gefunden'};
+  if(a==='guest'){const it=db.w[d.slug]?.items.find(i=>i.id===Number(d.id)&&!i.got);if(!it)return{error:'Wunsch nicht gefunden'};const t='xid' in d?(Number(d.xid)>0?(it.extras||[]).find(x=>x.xid===Number(d.xid)):null):it;if(!t)return{error:'Zubehör nicht gefunden'};
    const by=String(d.by||'').trim().slice(0,30),k=Math.random().toString(36).slice(2),c=Array.from({length:6},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.random()*32|0]).join(''),code=String(d.code||'').toUpperCase().replace(/[^A-Z0-9]/g,''),proof=(rk,rc)=>(rk&&d.key===rk)||(rc&&code===rc);
    if(d.op==='res'){if(d.on){if(t.res)return{error:'Das hat gerade schon jemand reserviert'};if(t===it&&it.parts?.length)return{error:'Hier wird schon zusammengelegt – gib einfach auch etwas dazu'};t.res=true;t.rk=k;t.rc=c;t.rv=2;if(by)t.by=by;else delete t.by;sv();return{ok:true,key:k,code:c}}
     if(t.rv===2&&!proof(t.rk,t.rc))return{error:code?'Der Code stimmt nicht':'Nur wer reserviert hat, kann die Reservierung aufheben',needCode:true};t.res=false;['by','rk','rc','rv'].forEach(x=>delete t[x]);sv();return{ok:true}}
@@ -803,6 +803,13 @@ function pub(app,w){
  const B=[['all','Alle',()=>true],['20','bis 20 €',p=>p<=20],['50','20–50 €',p=>p>20&&p<=50],['100','50–100 €',p=>p>50&&p<=100],['more','über 100 €',p=>p>100&&isFinite(p)]];
  let flt=ls.get('wl-flt:'+w.slug)||'all';
  const refresh=async()=>{const n=await api('get',{slug:w.slug});if(!n.error){w.items=n.items;draw()}};
+ // Reparatur: Früher wurde beim Reservieren von älterem Zubehör (ohne Kennung) versehentlich der ganze Wunsch
+ // reserviert. Der Schlüssel liegt dann unter „…:undefined“ – damit geben wir den Wunsch wieder frei.
+ const heal=async()=>{if(preview)return;let fixed=0;
+  for(const it of w.items){const bk=`wl-r:${w.slug}:${it.id}:undefined`,bad=ls.get(bk);if(!bad)continue;
+   if(it.res&&!ls.get(`wl-r:${w.slug}:${it.id}`)){const r=await api('guest',{op:'res',slug:w.slug,id:it.id,on:false,key:bad});if(!r.error){it.res=false;delete it.by;fixed++}}
+   ls.del(bk);ls.del(`wl-code:${w.slug}:${it.id}:undefined`)}
+  if(fixed){draw();toast('Eine fehlerhafte Reservierung wurde korrigiert – bitte das Zubehör ggf. neu reservieren',5000)}};
  const pv=p=>isFinite(num(p))?num(p):0,isFull=i=>{const t=num(i.price);return isFinite(t)&&t>0&&(i.parts||[]).reduce((s,p)=>s+(+p.amt||0),0)>=t};
  const draw=()=>{
   const all=[...w.items].sort((a,b)=>(b.top?1:0)-(a.top?1:0)||(b.pri||0)-(a.pri||0)||((num(a.price)-num(b.price))||0));
@@ -827,7 +834,7 @@ function pub(app,w){
     if(on){ls.set(key,JSON.stringify({pid:r.pid,key:r.key,code:r.code}));it.parts=[...(it.parts||[]),{pid:r.pid,amt:Math.round(Number(String(amt).replace(',','.'))*100)/100,...(by?{by}:{})}];r.code?codeDialog(r.code,`Dein Anteil: ${fmt(Math.round(Number(String(amt).replace(',','.'))*100)/100)} für ${it.title}`,w):toast('Danke! Du bist dabei 🎉')}
     else{ls.del(key);toast('Anteil zurückgenommen');return refresh()}draw()},
    onXRes:async(it2,x,on,code)=>{const key=`wl-r:${w.slug}:${it2.id}:${x.xid}`,ck=`wl-code:${w.slug}:${it2.id}:${x.xid}`,by=ls.get('wl-gname')||'';
-    const r=await api('guest',{op:'res',slug:w.slug,id:it2.id,xid:x.xid,on,by:on?by:'',key:ls.get(key)||'',code:code||''});if(r.error){toast(r.error,4000);if(!r.needCode)refresh();return false}
+    const r=await api('guest',{op:'res',slug:w.slug,id:it2.id,xid:x.xid??-1,on,by:on?by:'',key:ls.get(key)||'',code:code||''});if(r.error){toast(r.error,4000);if(!r.needCode)refresh();return false}
     x.res=on;if(on&&by)x.by=by;else delete x.by;
     if(on){ls.set(key,r.key||'1');r.code&&ls.set(ck,r.code);toast(r.code?`Zubehör reserviert – danke! Dein Code: ${r.code} (findest du auch unter „Meine Reservierungen & Codes“)`:'Zubehör reserviert – danke!',r.code?6000:2600)}else{ls.del(key);ls.del(ck);toast('Reservierung aufgehoben')}draw();return true}})))};
  app.append(stats,
@@ -837,7 +844,7 @@ function pub(app,w){
   h('div',{class:'box noprint',style:'margin-top:30px'},h('h3',{},'Liste weiterleiten'),h('p',{class:'mu small'},'Schick die Liste an andere Gäste oder die Familie.'),
    shareButtons(`🎁 Schau mal, das wünscht sich ${w.name} ${forWhat(w)}: ${url}`,url,'Wunschliste von '+w.name)),
   h('p',{class:'c foot noprint',style:'margin-top:24px'},h('a',{href:'#',onclick:e=>{e.preventDefault();go(tok?'edit':'')}},tok?'Zu meinen Listen →':'Eigene Wunschliste erstellen →')));
- draw()}
+ draw();heal()}
 
 /* ---------- Bild verkleinern ---------- */
 const shrink=(f,max=480)=>new Promise(r=>{const i=new Image,u=URL.createObjectURL(f);i.onload=()=>{const k=Math.min(1,max/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);URL.revokeObjectURL(u);r(c.toDataURL('image/jpeg',.7))};i.onerror=()=>{URL.revokeObjectURL(u);r('')};i.src=u});

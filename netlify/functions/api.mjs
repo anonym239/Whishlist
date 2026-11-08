@@ -73,6 +73,9 @@ const ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const mkCode = () => Array.from(randomBytes(6), b => ABC[b % ABC.length]).join('');
 const normCode = c => String(c ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
 const DAY = 86400000, SESSION_MS = 30 * DAY;
+// Jedes Zubehör braucht eine feste Kennung (älteres Zubehör hatte keine) – immer gleich berechnet
+const okX = v => Number.isSafeInteger(Number(v)) && Number(v) > 0;
+const fixX = i => (i.extras || []).map((x, k) => ({ ...x, xid: okX(x.xid) ? Number(x.xid) : Number(i.id) * 100 + k }));
 const isImg = u => http(u) || /^\/img\/[a-f0-9]{32}$/.test(u || '') || /^data:image\//.test(u || '');
 
 // Was Gäste sehen dürfen (geheime Schlüssel nie herausgeben, bekommene Wünsche ausblenden)
@@ -118,7 +121,7 @@ export default async (req, context) => {
     console.log(`[aufräumen] Alle Reservierungen aufgehoben: ${changed} von ${blobs.length} Listen geändert`);
   }
   // ältere Einträge (erste Version) automatisch ergänzen
-  const getW = async s => { const w = await st.get('w:' + str(s, 12), { type: 'json' }); if (w) { w.occasion ||= 'Geburtstag'; w.items = (w.items || []).map(i => ({ pri: 0, res: false, ...i })); } return w; };
+  const getW = async s => { const w = await st.get('w:' + str(s, 12), { type: 'json' }); if (w) { w.occasion ||= 'Geburtstag'; w.items = (w.items || []).map(i => ({ pri: 0, res: false, ...i, extras: fixX(i) })); } return w; };
   const getU = async e => { const u = await st.get('u:' + str(e, 120).toLowerCase(), { type: 'json' }); if (u && !u.lists) u.lists = u.slug ? [u.slug] : []; return u; };
   const login = async email => { const token = rnd(24); await st.setJSON('s:' + token, { email, exp: Date.now() + SESSION_MS }); return token; };
   // Anmeldung prüfen: läuft nach 30 Tagen ohne Nutzung ab (ältere Anmeldungen werden umgestellt)
@@ -160,7 +163,8 @@ export default async (req, context) => {
     const w = await getW(d.slug); if (!w) return J({ error: 'Liste nicht gefunden' }, 404);
     const it = w.items.find(i => i.id === Number(d.id) && !i.got); if (!it) return J({ error: 'Wunsch nicht gefunden' }, 404);
     const op = a === 'reserve' ? 'res' : d.op, key = str(d.key, 64), by = str(d.by, 30), done = async o => { await st.setJSON('w:' + w.slug, w); return J({ ok: true, ...o }); };
-    const t = d.xid != null && d.xid !== '' ? (it.extras || []).find(x => x.xid === Number(d.xid)) : it;
+    // Zubehör nur über seine Kennung – fehlt sie, niemals stattdessen den ganzen Wunsch reservieren
+    const t = 'xid' in d ? (okX(d.xid) ? (it.extras || []).find(x => x.xid === Number(d.xid)) : null) : it;
     if (!t) return J({ error: 'Zubehör nicht gefunden' }, 404);
     // Schlüssel (gleiches Gerät) oder Code (anderes Gerät) prüfen; falsche Codes zählen als Fehlversuch
     const code = normCode(d.code);
@@ -276,9 +280,9 @@ export default async (req, context) => {
     for (const i of (Array.isArray(d.items) ? d.items : []).slice(0, 100)) {
       const id = Number(i.id) || Date.now(), o = old.get(id), oldX = new Map((o?.extras || []).map(x => [x.xid, x]));
       const extras = [];
-      for (const x of (Array.isArray(i.extras) ? i.extras : []).slice(0, 8)) {
+      for (const [k, x] of (Array.isArray(i.extras) ? i.extras : []).slice(0, 8).entries()) {
         if (!str(x?.title, 80)) continue;
-        const xid = Number.isSafeInteger(Number(x.xid)) && Number(x.xid) > 0 ? Number(x.xid) : Date.now() * 10 + extras.length;
+        const xid = okX(x.xid) ? Number(x.xid) : id * 100 + k;
         extras.push({ xid, title: str(x.title, 80), why: str(x.why, 60), price: str(x.price, 20), link: http(x.link) ? str(x.link, 1000) : '',
           img: String(x.img || '').length < 300000 ? await storeImg(x.img) : '', ...keep(oldX.get(xid)) });
       }
