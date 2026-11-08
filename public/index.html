@@ -748,6 +748,8 @@ function pub(app,w){
  const B=[['all','Alle',()=>true],['20','bis 20 €',p=>p<=20],['50','20–50 €',p=>p>20&&p<=50],['100','50–100 €',p=>p>50&&p<=100],['more','über 100 €',p=>p>100&&isFinite(p)]];
  let flt=ls.get('wl-flt:'+w.slug)||'all';
  const refresh=async()=>{const n=await api('get',{slug:w.slug});if(!n.error){w.items=n.items;draw()}};
+ // Doppelte Tipps abfangen: immer nur eine Gast-Aktion gleichzeitig
+ let busy=false;const once=f=>async(...a)=>{if(busy)return false;busy=true;try{return await f(...a)}finally{busy=false}};
  // Reparatur: Früher wurde beim Reservieren von älterem Zubehör (ohne Kennung) versehentlich der ganze Wunsch
  // reserviert. Der Schlüssel liegt dann unter „…:undefined“ – damit geben wir den Wunsch wieder frei.
  const heal=async()=>{if(preview)return;let fixed=0;
@@ -767,18 +769,18 @@ function pub(app,w){
   if(!all.length)return put(g,h('p',{class:'mu c empty'},'Noch keine Wünsche – bald gibt es hier was zu sehen ✨'));
   if(!list.length)return put(g,h('p',{class:'mu c empty'},'In dieser Preisklasse gibt es nichts.'));
   put(g,list.map((it,i)=>card(it,i,{pub:!preview,slug:w.slug,owner:w.name,
-   onRes:async(e,on,by)=>{const key=`wl-r:${w.slug}:${it.id}`;
+   onRes:once(async(e,on,by)=>{const key=`wl-r:${w.slug}:${it.id}`;
     const r=await api('guest',{op:'res',slug:w.slug,id:it.id,on,by:on?by:'',key:ls.get(key)||''});if(r.error){toast(r.error,4000);return refresh()}
     it.res=on;if(on&&by)it.by=by;else delete it.by;
-    if(on){ls.set(key,r.key||'1');burst(e);toast(by?`Danke, ${by}! Reserviert 🎉`:'Reserviert – danke! 🎉')}else{ls.del(key);toast('Reservierung aufgehoben')}draw()},
-   onChip:async(e,on,by,amt)=>{const key=`wl-c:${w.slug}:${it.id}`;let mp=null;try{mp=JSON.parse(ls.get(key)||'null')}catch{}
+    if(on){ls.set(key,r.key||'1');burst(e);toast(by?`Danke, ${by}! Reserviert 🎉`:'Reserviert – danke! 🎉')}else{ls.del(key);toast('Reservierung aufgehoben')}draw()}),
+   onChip:once(async(e,on,by,amt)=>{const key=`wl-c:${w.slug}:${it.id}`;let mp=null;try{mp=JSON.parse(ls.get(key)||'null')}catch{}
     const r=await api('guest',{op:'chip',slug:w.slug,id:it.id,on,by:on?by:'',amt,pid:mp?.pid||'',key:mp?.key||''});if(r.error){toast(r.error,4000);if(!/Betrag/.test(r.error))refresh();return}
     if(on){ls.set(key,JSON.stringify({pid:r.pid,key:r.key}));it.parts=[...(it.parts||[]),{pid:r.pid,amt:Math.round(Number(String(amt).replace(',','.'))*100)/100,...(by?{by}:{})}];toast(by?`Danke, ${by}! Du bist dabei 🎉`:'Danke! Du bist dabei 🎉')}
-    else{ls.del(key);toast('Anteil zurückgenommen');return refresh()}draw()},
-   onXRes:async(it2,x,on)=>{const key=`wl-r:${w.slug}:${it2.id}:${x.xid}`,by=ls.get('wl-gname')||'';
+    else{ls.del(key);toast('Anteil zurückgenommen');return refresh()}draw()}),
+   onXRes:once(async(it2,x,on)=>{const key=`wl-r:${w.slug}:${it2.id}:${x.xid}`,by=ls.get('wl-gname')||'';
     const r=await api('guest',{op:'res',slug:w.slug,id:it2.id,xid:x.xid??-1,on,by:on?by:'',key:ls.get(key)||''});if(r.error){toast(r.error,4000);refresh();return false}
     x.res=on;if(on&&by)x.by=by;else delete x.by;
-    if(on){ls.set(key,r.key||'1');toast('Zubehör reserviert – danke!')}else{ls.del(key);toast('Reservierung aufgehoben')}draw();return true}})))};
+    if(on){ls.set(key,r.key||'1');toast('Zubehör reserviert – danke!')}else{ls.del(key);toast('Reservierung aufgehoben')}draw();return true})})))};
  app.append(stats,
   !preview&&w.items.length&&h('div',{class:'how noprint'},h('span',{},h('b',{},'1'),' Geschenk aussuchen'),h('span',{},h('b',{},'2'),' „Ich besorge das“ tippen'),h('span',{},h('b',{},'3'),' Im Shop kaufen')),
   !preview&&w.items.length&&h('p',{class:'mu c small noprint'},`${w.name} sieht nicht, wer was reserviert hat. Aufheben kannst du auf dem Gerät, mit dem du reserviert hast.`),

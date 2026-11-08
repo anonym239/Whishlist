@@ -12,7 +12,7 @@ export default async (req, context) => {
   const slug = String(context.params?.slug || '').toLowerCase();
   if (/^[a-z0-9]{6,12}$/.test(slug)) {
     try {
-      const w = await getStore('wishlist').get('w:' + slug, { type: 'json' });
+      const w = await getStore({ name: 'wishlist', consistency: 'strong' }).get('w:' + slug, { type: 'json' });
       if (w) {
         const items = (w.items || []).filter(i => !i.got);
         const pick = [...items].sort((a, b) => (b.top ? 1 : 0) - (a.top ? 1 : 0) || (b.pri || 0) - (a.pri || 0))

@@ -1,5 +1,5 @@
 // Service Worker: macht die Seite installierbar und öffnet sie auch ohne Internet
-const CACHE = 'wunschliste-v7';
+const CACHE = 'wunschliste-v8';
 const SHELL = ['/', '/index.html', '/manifest.webmanifest', '/icon-192.png', '/icon-512.png'];
 
 self.addEventListener('install', e => {

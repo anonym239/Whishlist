@@ -97,7 +97,8 @@ const mins = ms => Math.max(1, Math.ceil(ms / 60000));
 export default async (req, context) => {
   if (req.method !== 'POST') return J({ error: 'Nur POST' }, 405);
   let d; try { d = await req.json(); } catch { return J({ error: 'Ungültige Anfrage' }, 400); }
-  const st = getStore('wishlist'), a = d.action;
+  // "strong": immer den neuesten Stand lesen (sonst kann direkt nach dem Speichern noch der alte Stand kommen)
+  const st = getStore({ name: 'wishlist', consistency: 'strong' }), a = d.action;
 
   // Einmalige Aufräum-Aktion (vom Betreiber gewünscht): alle Reservierungen und Anteile auf allen Listen aufheben.
   // Läuft genau einmal beim ersten Aufruf nach dem Update; die Wünsche selbst bleiben unverändert.
