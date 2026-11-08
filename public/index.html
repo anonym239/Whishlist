@@ -203,6 +203,8 @@ body.noscroll{overflow:hidden}
 .sitefoot a{color:var(--mu);text-underline-offset:3px}
 body.hastabs .sitefoot{padding-bottom:110px}
 @media (max-width:760px){body.hastabs main{padding-bottom:20px}}
+.code{font-size:12.5px;text-align:center;width:100%}.code b{letter-spacing:.12em;color:var(--tx)}
+.xact .code{text-align:right}
 .rnote{font-size:12px;line-height:1.35}
 .mv{display:flex;gap:6px;width:100%;padding-top:10px}
 .mv button{flex:1;min-height:36px;padding:4px}
@@ -357,7 +359,7 @@ const ico=n=>{const s=document.createElementNS('http://www.w3.org/2000/svg','svg
 const OCC={Geburtstag:'🎂',Weihnachten:'🎄',Hochzeit:'💍',Sonstiges:'🎁'};
 const icon=o=>OCC[o]||'🎁';
 const QS=['Wie hieß dein erstes Haustier?','In welcher Stadt bist du geboren?','Was ist dein Lieblingsessen?','Wie hieß deine erste Schule?'];
-const toast=m=>{const t=h('div',{class:'toast',role:'status'},m);document.body.append(t);setTimeout(()=>t.remove(),2600)};
+const toast=(m,ms=2600)=>{document.querySelectorAll('.toast').forEach(x=>x.remove());const t=h('div',{class:'toast',role:'status'},m);document.body.append(t);setTimeout(()=>t.remove(),ms)};
 const burst=()=>{};const _burst=e=>{if(!e||(!e.clientX&&!e.clientY))return;for(let i=0;i<16;i++){const p=h('span',{class:'p',style:`left:${e.clientX}px;top:${e.clientY}px;--dx:${(Math.random()-.5)*320}px;--dy:${-Math.random()*260-40}px`},['🎉','✨','🎁','💖'][i%4]);document.body.append(p);setTimeout(()=>p.remove(),1000)}};
 const rain=()=>{for(let i=0;i<30;i++){const e=h('span',{class:'rain',style:`left:${Math.random()*100}%;animation-duration:${3+Math.random()*4}s;animation-delay:${Math.random()*3}s`},['🎉','🎊','🎈','✨','🎁','💖'][i%6]);document.body.append(e);setTimeout(()=>e.remove(),10000)}};
 
@@ -384,23 +386,23 @@ const L={
    ls.del(fk);if(a==='login')return{token:em,slug:u.lists[0]};
    if((d.pw||'').length<6)return{error:'Neues Passwort: min. 6 Zeichen'};u.pw=d.pw;sv();return{token:em,slug:u.lists[0]}}
   if(a==='resetq'){const u=db.u[em];return u?{q:u.q||'Sicherheitsfrage'}:{error:'E-Mail nicht gefunden'}}
-  if(a==='get'){const w=db.w[d.slug];if(!w)return{error:'Liste nicht gefunden'};const c=cp(w);c.items=c.items.filter(i=>!i.got).map(i=>{delete i.rk;(i.parts||[]).forEach(p=>delete p.rk);(i.extras||[]).forEach(x=>delete x.rk);return i});return c}
+  if(a==='get'){const w=db.w[d.slug];if(!w)return{error:'Liste nicht gefunden'};const c=cp(w);const z=o=>['rk','rc','rv'].forEach(k=>delete o[k]);c.items=c.items.filter(i=>!i.got).map(i=>{z(i);(i.parts||[]).forEach(z);(i.extras||[]).forEach(z);return i});return c}
   if(a==='logout')return{ok:true};
   if(a==='guest'){const it=db.w[d.slug]?.items.find(i=>i.id===Number(d.id)&&!i.got);if(!it)return{error:'Wunsch nicht gefunden'};const t=d.xid!=null&&d.xid!==''?(it.extras||[]).find(x=>x.xid===Number(d.xid)):it;if(!t)return{error:'Zubehör nicht gefunden'};
-   const by=String(d.by||'').trim().slice(0,30),k=Math.random().toString(36).slice(2);
-   if(d.op==='res'){if(d.on){if(t.res)return{error:'Das hat gerade schon jemand reserviert'};if(t===it&&it.parts?.length)return{error:'Hier wird schon zusammengelegt – gib einfach auch etwas dazu'};t.res=true;t.rk=k;if(by)t.by=by;else delete t.by;sv();return{ok:true,key:k}}
-    if(t.rk&&t.rk!==d.key)return{error:'Nur wer reserviert hat, kann die Reservierung aufheben'};t.res=false;delete t.by;delete t.rk;sv();return{ok:true}}
-   if(d.op==='chip'&&t===it){it.parts=it.parts||[];if(d.on){if(it.res)return{error:'Das hat schon jemand komplett reserviert'};const amt=Math.round(Number(String(d.amt||'').replace(',','.'))*100)/100;if(!(amt>=1&&amt<=10000))return{error:'Bitte einen Betrag zwischen 1 und 10.000 € angeben'};const pid=k.slice(0,8);it.parts.push({pid,amt,...(by?{by}:{}),rk:k});sv();return{ok:true,key:k,pid}}
-    const p=it.parts.find(p=>p.pid===d.pid);if(!p)return{ok:true};if(p.rk!==d.key)return{error:'Nur wer etwas dazugegeben hat, kann es zurücknehmen'};it.parts=it.parts.filter(x=>x!==p);sv();return{ok:true}}
+   const by=String(d.by||'').trim().slice(0,30),k=Math.random().toString(36).slice(2),c=Array.from({length:6},()=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.random()*32|0]).join(''),code=String(d.code||'').toUpperCase().replace(/[^A-Z0-9]/g,''),proof=(rk,rc)=>(rk&&d.key===rk)||(rc&&code===rc);
+   if(d.op==='res'){if(d.on){if(t.res)return{error:'Das hat gerade schon jemand reserviert'};if(t===it&&it.parts?.length)return{error:'Hier wird schon zusammengelegt – gib einfach auch etwas dazu'};t.res=true;t.rk=k;t.rc=c;t.rv=2;if(by)t.by=by;else delete t.by;sv();return{ok:true,key:k,code:c}}
+    if(t.rv===2&&!proof(t.rk,t.rc))return{error:code?'Der Code stimmt nicht':'Nur wer reserviert hat, kann die Reservierung aufheben',needCode:true};t.res=false;['by','rk','rc','rv'].forEach(x=>delete t[x]);sv();return{ok:true}}
+   if(d.op==='chip'&&t===it){it.parts=it.parts||[];if(d.on){if(it.res)return{error:'Das hat schon jemand komplett reserviert'};const amt=Math.round(Number(String(d.amt||'').replace(',','.'))*100)/100;if(!(amt>=1&&amt<=10000))return{error:'Bitte einen Betrag zwischen 1 und 10.000 € angeben'};const pid=k.slice(0,8);it.parts.push({pid,amt,...(by?{by}:{}),rk:k,rc:c});sv();return{ok:true,key:k,pid,code:c}}
+    const p=it.parts.find(p=>(p.pid===d.pid&&p.rk===d.key)||(code&&p.rc===code));if(!p)return{error:code?'Der Code stimmt nicht':'Nur wer etwas dazugegeben hat, kann es zurücknehmen',needCode:true};it.parts=it.parts.filter(x=>x!==p);sv();return{ok:true}}
    return{error:'Unbekannte Aktion'}}
   const u=db.u[d.token];if(!u)return{error:'Nicht angemeldet'};
   if(a==='me')return{lists:u.lists.filter(s=>db.w[s]).map(s=>({slug:s,name:db.w[s].name,bd:db.w[s].bd,occasion:db.w[s].occasion,count:db.w[s].items.length}))};
   if(a==='newlist'){if(!d.name||!d.bd)return{error:'Bitte Name und Datum angeben'};if(u.lists.length>=10)return{error:'Maximal 10 Listen'};const s=mk();db.w[s]={slug:s,name:d.name,bd:d.bd,occasion:d.occasion||'Geburtstag',items:[]};u.lists.push(s);sv();return{slug:s}}
   const w=db.w[d.slug];if(!w||!u.lists.includes(d.slug))return{error:'Keine Berechtigung'};
-  if(a==='getown'){const c=cp(w);c.items.forEach(i=>{['res','by','rk','parts'].forEach(k=>delete i[k]);(i.extras||[]).forEach(x=>['res','by','rk'].forEach(k=>delete x[k]))});return c}
-  if(a==='save'){const r=new Map(w.items.map(i=>[i.id,i])),keep=o=>o?{res:!!o.res,...(o.by?{by:o.by}:{}),...(o.rk?{rk:o.rk}:{})}:{res:false};
+  if(a==='getown'){const c=cp(w);c.items.forEach(i=>{['res','by','rk','rc','rv','parts'].forEach(k=>delete i[k]);(i.extras||[]).forEach(x=>['res','by','rk','rc','rv'].forEach(k=>delete x[k]))});return c}
+  if(a==='save'){const r=new Map(w.items.map(i=>[i.id,i])),keep=o=>o?{res:!!o.res,...(o.by?{by:o.by}:{}),...(o.rk?{rk:o.rk}:{}),...(o.rc?{rc:o.rc}:{}),...(o.rv?{rv:o.rv}:{})}:{res:false};
    w.items=cp(d.items).map(i=>{const o=r.get(i.id),ox=new Map((o?.extras||[]).map(x=>[x.xid,x]));return{...i,extras:(i.extras||[]).map(x=>({...x,...keep(ox.get(x.xid))})),...keep(o),...(o?.parts?.length?{parts:o.parts}:{})}});sv();return{ok:true}}
-  if(a==='newround'){w.items=w.items.filter(i=>!i.got).map(i=>{['by','rk','parts'].forEach(k=>delete i[k]);i.res=false;(i.extras||[]).forEach(x=>{delete x.by;delete x.rk;x.res=false});return i});sv();return{ok:true}}
+  if(a==='newround'){w.items=w.items.filter(i=>!i.got).map(i=>{['by','rk','rc','rv','parts'].forEach(k=>delete i[k]);i.res=false;(i.extras||[]).forEach(x=>{['by','rk','rc','rv'].forEach(k=>delete x[k]);x.res=false});return i});sv();return{ok:true}}
   if(a==='meta'){if(d.name)w.name=d.name;if(d.bd)w.bd=d.bd;if(d.occasion)w.occasion=d.occasion;sv();return{ok:true}}
   if(a==='dellist'){if(u.lists.length<=1)return{error:'Die letzte Liste kann nicht gelöscht werden'};delete db.w[d.slug];u.lists=u.lists.filter(x=>x!==d.slug);sv();return{ok:true,slug:u.lists[0]}}
   return{error:'Unbekannte Aktion'}}};
@@ -472,10 +474,18 @@ function card(it,i,o){
    const send=h('button',{class:'rbtn',onclick:e=>{const n=N.value.trim();n?ls.set('wl-gname',n):ls.del('wl-gname');mode==='res'?o.onRes(e,true,n):o.onChip(e,true,n,A.value)}},mode==='res'?'✓ Reservieren':'✓ Dazugeben');
    [N,A].forEach(x=>x&&x.addEventListener('keydown',e=>{if(e.key==='Enter')send.click();if(e.key==='Escape')base()}));
    put(slot,h('small',{class:'mu rnote'},mode==='res'?`Andere Gäste sehen deinen Namen, ${o.owner} nicht.`:`Mehrere legen zusammen. ${o.owner} sieht nichts davon.`),N,A,send,h('button',{class:'g rbtn',onclick:base},'Abbrechen'));setTimeout(()=>(A||N).focus(),50)};
-  const base=()=>put(slot,it.res?h('button',{class:'g rbtn',disabled:!mine,onclick:e=>o.onRes(e,false)},mine?'Reservierung aufheben':'Schon vergeben')
+  // Auf einem anderen Gerät reserviert/dazugegeben? -> mit dem Code aufheben
+  const askCode=mode=>{const C=h('input',{placeholder:'Dein Code, z.B. K7M2QX','aria-label':'Dein Code',maxlength:'12',autocapitalize:'characters',autocomplete:'off',style:'text-transform:uppercase;letter-spacing:.12em'});
+   const send=h('button',{class:'rbtn',onclick:e=>{const c=C.value.trim();if(!c)return C.focus();mode==='res'?o.onRes(e,false,'',c):o.onChip(e,false,'','',c)}},mode==='res'?'Reservierung aufheben':'Anteil zurücknehmen');
+   C.addEventListener('keydown',e=>{if(e.key==='Enter')send.click();if(e.key==='Escape')base()});
+   put(slot,h('small',{class:'mu rnote'},'Den Code hast du beim '+(mode==='res'?'Reservieren':'Dazugeben')+' bekommen.'),C,send,h('button',{class:'g rbtn',onclick:base},'Abbrechen'));setTimeout(()=>C.focus(),50)};
+  const myCode=ls.get(`wl-code:${o.slug}:${it.id}`),myChipCode=myPart?.code;
+  const base=()=>put(slot,it.res?[h('button',{class:'g rbtn',disabled:!mine,onclick:e=>o.onRes(e,false)},mine?'Reservierung aufheben':'Schon vergeben'),
+     mine?myCode&&h('small',{class:'mu code'},'Dein Code: ',h('b',{},myCode)):h('button',{class:'g rbtn soft',onclick:()=>askCode('res')},'Das war ich – mit Code aufheben')]
    :[!parts.length&&h('button',{class:'g rbtn',onclick:()=>ask('res')},'Ich besorge das'),
-     myPart?h('button',{class:'g rbtn',onclick:e=>o.onChip(e,false)},'Meinen Anteil zurücknehmen')
-     :!full&&h('button',{class:parts.length?'g rbtn':'g rbtn soft',onclick:()=>ask('chip')},parts.length?'Ich gebe auch was dazu':'Lieber zusammenlegen?')]);
+     myPart?[h('button',{class:'g rbtn',onclick:e=>o.onChip(e,false)},'Meinen Anteil zurücknehmen'),myChipCode&&h('small',{class:'mu code'},'Dein Code: ',h('b',{},myChipCode))]
+     :[!full&&h('button',{class:parts.length?'g rbtn':'g rbtn soft',onclick:()=>ask('chip')},parts.length?'Ich gebe auch was dazu':'Lieber zusammenlegen?'),
+       parts.length&&h('button',{class:'g rbtn soft',onclick:()=>askCode('chip')},'Schon dabei? Mit Code zurücknehmen')]]);
   base();return slot};
  return h('div',{class:'card'+(taken?' res':'')+(it.top?' top':''),style:`animation-delay:${i*60}ms`,'data-id':it.id,draggable:o.drag?'true':false},
   h('span',{class:'n'},'#'+(i+1)),
@@ -511,7 +521,8 @@ function extrasSheet(it,o={}){
   h('div',{class:'xt'},main&&h('span',{class:'xk'},'Hauptwunsch'),h('b',{},x.title),x.why&&h('small',{class:'mu'},x.why),x.price&&h('span',{class:'xp'},eur(x.price)),
    !main&&o.pub&&x.res&&h('span',{class:'xres'},xmine(x)?'✓ Von dir reserviert':x.by?'✓ Reserviert von '+x.by:'✓ Schon reserviert')),
   h('div',{class:'xact'},ok(x.link)&&h('a',{class:'btn xs',href:x.link,target:'_blank',rel:'noopener noreferrer'},'Shop ↗'),
-   !main&&o.pub&&(x.res?xmine(x)&&h('button',{class:'g xs',onclick:async()=>{if(await o.onXRes(it,x,false))draw()}},'Aufheben')
+   !main&&o.pub&&(x.res?(xmine(x)?[h('button',{class:'g xs',onclick:async()=>{if(await o.onXRes(it,x,false))draw()}},'Aufheben'),ls.get(`wl-code:${o.slug}:${it.id}:${x.xid}`)&&h('small',{class:'mu code'},'Code: ',h('b',{},ls.get(`wl-code:${o.slug}:${it.id}:${x.xid}`)))]
+     :h('button',{class:'g xs soft',title:'Auf einem anderen Gerät reserviert?',onclick:async()=>{const c=prompt('Auf einem anderen Gerät reserviert?\nGib deinen Code ein, um die Reservierung aufzuheben:');if(c&&c.trim()&&await o.onXRes(it,x,false,c.trim()))draw()}},'Code?'))
     :h('button',{class:'g xs',onclick:async()=>{if(await o.onXRes(it,x,true))draw()}},'Ich besorge das')))));
  const N=o.pub&&h('input',{placeholder:'Dein Name (freiwillig)','aria-label':'Dein Name (freiwillig)',maxlength:'30',autocomplete:'given-name',value:ls.get('wl-gname')||'',oninput:e=>{const n=e.target.value.trim();n?ls.set('wl-gname',n):ls.del('wl-gname')}});
  const draw=()=>put(body,row(it,true),h('p',{class:'xsep'},`Dazu bitte mitbestellen · ${it.extras.length} ${it.extras.length===1?'Teil':'Teile'}`),
@@ -760,16 +771,19 @@ function pub(app,w){
   if(!all.length)return put(g,h('p',{class:'mu c empty'},'Noch keine Wünsche – bald gibt es hier was zu sehen ✨'));
   if(!list.length)return put(g,h('p',{class:'mu c empty'},'In dieser Preisklasse gibt es nichts.'));
   put(g,list.map((it,i)=>card(it,i,{pub:!preview,slug:w.slug,owner:w.name,
-   onRes:async(e,on,by)=>{const key=`wl-r:${w.slug}:${it.id}`;
-    const r=await api('guest',{op:'res',slug:w.slug,id:it.id,on,by:on?by:'',key:ls.get(key)||''});if(r.error){toast(r.error);return refresh()}
-    it.res=on;if(on&&by)it.by=by;else delete it.by;on?ls.set(key,r.key||'1'):ls.del(key);if(on){burst(e);toast(by?`Danke, ${by}! Reserviert 🎉`:'Reserviert – danke! 🎉')}draw()},
-   onChip:async(e,on,by,amt)=>{const key=`wl-c:${w.slug}:${it.id}`;let mp=null;try{mp=JSON.parse(ls.get(key)||'null')}catch{}
-    const r=await api('guest',{op:'chip',slug:w.slug,id:it.id,on,by:on?by:'',amt,pid:mp?.pid||'',key:mp?.key||''});if(r.error){toast(r.error);if(!/Betrag/.test(r.error))refresh();return}
-    if(on){ls.set(key,JSON.stringify({pid:r.pid,key:r.key}));it.parts=[...(it.parts||[]),{pid:r.pid,amt:Math.round(Number(String(amt).replace(',','.'))*100)/100,...(by?{by}:{})}];toast(by?`Danke, ${by}! Du bist dabei 🎉`:'Danke! Du bist dabei 🎉')}
-    else{it.parts=(it.parts||[]).filter(p=>p.pid!==mp?.pid);ls.del(key);toast('Anteil zurückgenommen')}draw()},
-   onXRes:async(it2,x,on)=>{const key=`wl-r:${w.slug}:${it2.id}:${x.xid}`,by=ls.get('wl-gname')||'';
-    const r=await api('guest',{op:'res',slug:w.slug,id:it2.id,xid:x.xid,on,by:on?by:'',key:ls.get(key)||''});if(r.error){toast(r.error);refresh();return false}
-    x.res=on;if(on&&by)x.by=by;else delete x.by;on?ls.set(key,r.key||'1'):ls.del(key);toast(on?'Zubehör reserviert – danke!':'Reservierung aufgehoben');draw();return true}})))};
+   onRes:async(e,on,by,code)=>{const key=`wl-r:${w.slug}:${it.id}`,ck=`wl-code:${w.slug}:${it.id}`;
+    const r=await api('guest',{op:'res',slug:w.slug,id:it.id,on,by:on?by:'',key:ls.get(key)||'',code:code||''});if(r.error){toast(r.error,4000);return r.needCode?null:refresh()}
+    it.res=on;if(on&&by)it.by=by;else delete it.by;
+    if(on){ls.set(key,r.key||'1');r.code?ls.set(ck,r.code):ls.del(ck);burst(e);toast(r.code?`Reserviert – danke! Dein Code: ${r.code}. Damit kannst du die Reservierung auch auf einem anderen Gerät aufheben.`:(by?`Danke, ${by}! Reserviert 🎉`:'Reserviert – danke! 🎉'),r.code?9000:2600)}
+    else{ls.del(key);ls.del(ck);toast('Reservierung aufgehoben')}draw()},
+   onChip:async(e,on,by,amt,code)=>{const key=`wl-c:${w.slug}:${it.id}`;let mp=null;try{mp=JSON.parse(ls.get(key)||'null')}catch{}
+    const r=await api('guest',{op:'chip',slug:w.slug,id:it.id,on,by:on?by:'',amt,pid:mp?.pid||'',key:mp?.key||'',code:code||''});if(r.error){toast(r.error,4000);if(!/Betrag|Code|Nur wer/.test(r.error))refresh();return}
+    if(on){ls.set(key,JSON.stringify({pid:r.pid,key:r.key,code:r.code}));it.parts=[...(it.parts||[]),{pid:r.pid,amt:Math.round(Number(String(amt).replace(',','.'))*100)/100,...(by?{by}:{})}];toast(r.code?`Danke – du bist dabei! Dein Code: ${r.code}. Damit kannst du deinen Anteil auch auf einem anderen Gerät zurücknehmen.`:'Danke! Du bist dabei 🎉',r.code?9000:2600)}
+    else{ls.del(key);toast('Anteil zurückgenommen');return refresh()}draw()},
+   onXRes:async(it2,x,on,code)=>{const key=`wl-r:${w.slug}:${it2.id}:${x.xid}`,ck=`wl-code:${w.slug}:${it2.id}:${x.xid}`,by=ls.get('wl-gname')||'';
+    const r=await api('guest',{op:'res',slug:w.slug,id:it2.id,xid:x.xid,on,by:on?by:'',key:ls.get(key)||'',code:code||''});if(r.error){toast(r.error,4000);if(!r.needCode)refresh();return false}
+    x.res=on;if(on&&by)x.by=by;else delete x.by;
+    if(on){ls.set(key,r.key||'1');r.code&&ls.set(ck,r.code);toast(r.code?`Zubehör reserviert – danke! Dein Code: ${r.code}`:'Zubehör reserviert – danke!',r.code?7000:2600)}else{ls.del(key);ls.del(ck);toast('Reservierung aufgehoben')}draw();return true}})))};
  app.append(stats,
   !preview&&w.items.length&&h('div',{class:'how noprint'},h('span',{},h('b',{},'1'),' Geschenk aussuchen'),h('span',{},h('b',{},'2'),' „Ich besorge das“ tippen'),h('span',{},h('b',{},'3'),' Im Shop kaufen')),
   !preview&&w.items.length&&h('p',{class:'mu c small noprint'},`${w.name} sieht nicht, wer was reserviert hat. Teure Wünsche könnt ihr auch zusammenlegen.`),

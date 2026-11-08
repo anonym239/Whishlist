@@ -68,14 +68,18 @@ const hash = (v, salt) => scryptSync(String(v), salt, 32);
 const same = (hex, v, salt) => timingSafeEqual(Buffer.from(hex, 'hex'), hash(v, salt));
 const rnd = n => randomBytes(n).toString('hex');
 const sha = v => createHash('sha256').update(String(v)).digest('hex');
+// Kurzer Code zum Aufheben auf einem anderen Gerät (ohne leicht verwechselbare Zeichen)
+const ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const mkCode = () => Array.from(randomBytes(6), b => ABC[b % ABC.length]).join('');
+const normCode = c => String(c ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
 const DAY = 86400000, SESSION_MS = 30 * DAY;
 const isImg = u => http(u) || /^\/img\/[a-f0-9]{32}$/.test(u || '') || /^data:image\//.test(u || '');
 
 // Was Gäste sehen dürfen (geheime Schlüssel nie herausgeben, bekommene Wünsche ausblenden)
-const forGuests = w => ({ ...w, items: w.items.filter(i => !i.got).map(({ rk, got, ...i }) => ({ ...i,
-  parts: (i.parts || []).map(({ rk, ...p }) => p), extras: (i.extras || []).map(({ rk, ...x }) => x) })) });
+const forGuests = w => ({ ...w, items: w.items.filter(i => !i.got).map(({ rk, rc, rv, got, ...i }) => ({ ...i,
+  parts: (i.parts || []).map(({ rk, rc, ...p }) => p), extras: (i.extras || []).map(({ rk, rc, rv, ...x }) => x) })) });
 // Was der Besitzer sieht (keine Reservierungen – die Überraschung bleibt)
-const forOwner = w => ({ ...w, items: w.items.map(({ res, by, rk, parts, ...i }) => ({ ...i, extras: (i.extras || []).map(({ res, by, rk, ...x }) => x) })) });
+const forOwner = w => ({ ...w, items: w.items.map(({ res, by, rk, rc, rv, parts, ...i }) => ({ ...i, extras: (i.extras || []).map(({ res, by, rk, rc, rv, ...x }) => x) })) });
 
 // Hochgeladene Fotos getrennt ablegen (Liste bleibt klein und schnell)
 const storeImg = async u => {
@@ -140,16 +144,27 @@ export default async (req, context) => {
     const op = a === 'reserve' ? 'res' : d.op, key = str(d.key, 64), by = str(d.by, 30), done = async o => { await st.setJSON('w:' + w.slug, w); return J({ ok: true, ...o }); };
     const t = d.xid != null && d.xid !== '' ? (it.extras || []).find(x => x.xid === Number(d.xid)) : it;
     if (!t) return J({ error: 'Zubehör nicht gefunden' }, 404);
+    // Schlüssel (gleiches Gerät) oder Code (anderes Gerät) prüfen; falsche Codes zählen als Fehlversuch
+    const code = normCode(d.code);
+    const proven = async (rk, rc) => {
+      if (rk && key && sha(key) === rk) return true;
+      if (rc && code) { const m = await lockedFor(['ip:' + ip]); if (m) return false; if (sha(code) === rc) return true; await failed('ip:' + ip, MAX_IP); }
+      return false;
+    };
+    const denied = msg => J({ error: code ? 'Der Code stimmt nicht' : msg, needCode: true }, 403);
     if (op === 'res') {
       if (d.on) {
         if (t.res) return J({ error: 'Das hat gerade schon jemand reserviert' }, 409);
         if (t === it && it.parts?.length) return J({ error: 'Hier wird schon zusammengelegt – gib einfach auch etwas dazu' }, 409);
-        const k = rnd(16); t.res = true; t.rk = sha(k); if (by) t.by = by; else delete t.by;
-        return done({ key: k });
+        delete t.rk; delete t.rc; delete t.rv; t.res = true; if (by) t.by = by; else delete t.by;
+        if (a === 'reserve') return done(); // alte Seitenversion: ohne Schutz, damit sie wieder aufgehoben werden kann
+        const k = rnd(16), c = mkCode(); t.rk = sha(k); t.rc = sha(c); t.rv = 2;
+        return done({ key: k, code: c });
       }
       if (!t.res) return J({ ok: true });
-      if (t.rk && sha(key) !== t.rk) return J({ error: 'Nur wer reserviert hat, kann die Reservierung aufheben' }, 403);
-      t.res = false; delete t.by; delete t.rk; return done();
+      // Geschützt sind nur Reservierungen mit Code (rv 2); ältere lassen sich wie früher aufheben
+      if (t.rv === 2 && !(await proven(t.rk, t.rc))) return denied('Nur wer reserviert hat, kann die Reservierung aufheben – mit dem Code geht es auch auf einem anderen Gerät');
+      t.res = false; delete t.by; delete t.rk; delete t.rc; delete t.rv; return done();
     }
     if (op === 'chip' && t === it) {
       it.parts ||= [];
@@ -158,11 +173,12 @@ export default async (req, context) => {
         const amt = Math.round(Number(String(d.amt ?? '').replace(',', '.')) * 100) / 100;
         if (!(amt >= 1 && amt <= 10000)) return J({ error: 'Bitte einen Betrag zwischen 1 und 10.000 € angeben' }, 400);
         if (it.parts.length >= 30) return J({ error: 'Es geben schon sehr viele etwas dazu' }, 400);
-        const k = rnd(16), pid = rnd(4); it.parts.push({ pid, amt, ...(by ? { by } : {}), rk: sha(k) });
-        return done({ key: k, pid });
+        const k = rnd(16), c = mkCode(), pid = rnd(4); it.parts.push({ pid, amt, ...(by ? { by } : {}), rk: sha(k), rc: sha(c) });
+        return done({ key: k, pid, code: c });
       }
-      const p = it.parts.find(p => p.pid === str(d.pid, 8)); if (!p) return J({ ok: true });
-      if (sha(key) !== p.rk) return J({ error: 'Nur wer etwas dazugegeben hat, kann es zurücknehmen' }, 403);
+      let p = it.parts.find(p => p.pid === str(d.pid, 8) && key && sha(key) === p.rk);
+      if (!p && code) { p = it.parts.find(p => p.rc && sha(code) === p.rc); if (!p && !(await lockedFor(['ip:' + ip]))) await failed('ip:' + ip, MAX_IP); }
+      if (!p) return denied('Nur wer etwas dazugegeben hat, kann es zurücknehmen – mit dem Code geht es auch auf einem anderen Gerät');
       it.parts = it.parts.filter(x => x !== p); return done();
     }
     return J({ error: 'Unbekannte Aktion' }, 400);
@@ -237,7 +253,7 @@ export default async (req, context) => {
 
   if (a === 'save') {
     const old = new Map(w.items.map(i => [i.id, i]));
-    const keep = o => o ? { res: !!o.res, ...(o.by ? { by: o.by } : {}), ...(o.rk ? { rk: o.rk } : {}) } : { res: false };
+    const keep = o => o ? { res: !!o.res, ...(o.by ? { by: o.by } : {}), ...(o.rk ? { rk: o.rk } : {}), ...(o.rc ? { rc: o.rc } : {}), ...(o.rv ? { rv: o.rv } : {}) } : { res: false };
     const items = [];
     for (const i of (Array.isArray(d.items) ? d.items : []).slice(0, 100)) {
       const id = Number(i.id) || Date.now(), o = old.get(id), oldX = new Map((o?.extras || []).map(x => [x.xid, x]));
@@ -264,7 +280,7 @@ export default async (req, context) => {
 
   // Neue Runde: bekommene Wünsche entfernen, alle Reservierungen zurücksetzen
   if (a === 'newround') {
-    w.items = w.items.filter(i => !i.got).map(({ res, by, rk, parts, ...i }) => ({ ...i, res: false, extras: (i.extras || []).map(({ res, by, rk, ...x }) => ({ ...x, res: false })) }));
+    w.items = w.items.filter(i => !i.got).map(({ res, by, rk, rc, rv, parts, ...i }) => ({ ...i, res: false, extras: (i.extras || []).map(({ res, by, rk, rc, rv, ...x }) => ({ ...x, res: false })) }));
     await st.setJSON('w:' + slug, w);
     return J({ ok: true });
   }
