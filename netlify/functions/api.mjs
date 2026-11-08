@@ -102,7 +102,7 @@ export default async (req, context) => {
 
   // Einmalige Aufräum-Aktion (vom Betreiber gewünscht): alle Reservierungen und Anteile auf allen Listen aufheben.
   // Läuft genau einmal beim ersten Aufruf nach dem Update; die Wünsche selbst bleiben unverändert.
-  const MIG = 'mig:reset-reservations-2026-11-08b';
+  const MIG = 'mig:reset-reservations-2026-11-08c';
   if (!(await st.get(MIG))) {
     const { blobs } = await st.list({ prefix: 'w:' }); let changed = 0;
     for (const b of blobs) {
