@@ -6,6 +6,8 @@ Läuft komplett auf Netlify (kostenlos): Netlify Functions + Netlify Blobs – *
 ## Funktionen
 - ✏️ Gespeicherte Wünsche nachträglich bearbeiten (Stift-Symbol auf der Karte)
 - 🎁 Wünsche mit Bild (URL oder Upload), Preis (€ wird automatisch ergänzt) und Shop-Link
+- 🔥 TOP-Wunsch per Schalter markieren (Abzeichen im Bild, steht für Freunde ganz oben)
+- 💬 Kleine persönliche Nachricht pro Wunsch (z.B. „Mama, bitte – das brauche ich!“)
 - ⭐ 1–5 Sterne: wie sehr du dir etwas wünschst
 - ✅ **Reservieren:** Freunde markieren „Ich besorge das“ – du als Besitzer siehst das nicht (Überraschung bleibt)
 - ⏱ Live-Countdown (Tage, Stunden, Minuten, Sekunden) + Konfetti-Regen am großen Tag
