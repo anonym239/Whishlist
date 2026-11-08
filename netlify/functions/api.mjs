@@ -185,6 +185,7 @@ export default async (req, context) => {
       return {
         id, title: str(i.title, 120), price: str(i.price, 20),
         pri: Math.max(0, Math.min(5, Number(i.pri) || 0)), top: !!i.top, note: str(i.note, 140),
+        extras: (Array.isArray(i.extras) ? i.extras : []).slice(0, 8).map(x => ({ title: str(x?.title, 80), why: str(x?.why, 60), price: str(x?.price, 20), link: http(x?.link) ? str(x.link, 1000) : '' })).filter(x => x.title),
         link: http(i.link) ? str(i.link, 1000) : '',
         img: (http(i.img) || /^data:image\//.test(i.img || '')) && String(i.img).length < 700000 ? i.img : '',
         res: !!old.get(id)?.res, ...(old.get(id)?.by ? { by: old.get(id).by } : {})

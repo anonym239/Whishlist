@@ -120,6 +120,21 @@ textarea:focus{border-color:var(--tx);box-shadow:0 0 0 3px color-mix(in srgb,var
 .knob{width:44px;height:26px;border-radius:99px;background:var(--bd2);position:relative;flex:none;transition:background .2s}
 .knob::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
 .sw.on .knob{background:var(--tx)}.sw.on .knob::after{transform:translateX(18px)}
+.extras{width:100%;margin:6px 0 8px;border:1px solid var(--bd);border-radius:12px;background:var(--bg);overflow:hidden}
+.xh{display:flex;align-items:center;gap:5px;padding:7px 10px 5px;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mu)}
+.xh svg.i{width:13px;height:13px;stroke-width:2.4}
+.xi{display:flex;align-items:center;gap:8px;padding:8px 10px;border-top:1px solid var(--bd);color:var(--tx);text-decoration:none;font-size:14px;line-height:1.25}
+a.xi:hover{background:var(--sf2)}
+.xt{flex:1;min-width:0;display:flex;flex-direction:column;overflow-wrap:anywhere}.xt b{font-weight:600}.xt small{font-size:12px}
+.xp{font-family:var(--serif);font-size:16px;white-space:nowrap}
+.xa{color:var(--mu);font-size:14px}
+[hidden]{display:none!important}
+.exbox{margin:12px 0 4px;padding:14px;border:1px dashed var(--bd2);border-radius:12px}
+.exbox>small{display:block;font-size:12.5px;margin-bottom:6px}
+.exrows{display:grid;gap:10px;margin:8px 0}
+.exrow{padding:4px 12px 12px;border:1px solid var(--bd);border-radius:10px;background:var(--bg)}
+.exrow .exdel{min-height:36px;padding:4px 12px;font-size:13.5px;margin-top:4px}
+.exrow .exdel svg.i{width:14px;height:14px}
 .rnote{font-size:12px;line-height:1.35}
 .mv{display:flex;gap:6px;width:100%;padding-top:10px}
 .mv button{flex:1;min-height:36px;padding:4px}
@@ -378,6 +393,9 @@ function card(it,i,o){
    it.note&&h('p',{class:'note'},'„'+it.note+'“'),
    o.own?starPick(it.pri||0,o.onPri,'cst'):(it.pri?h('span',{class:'pri',title:'Wie sehr gewünscht','aria-label':`${it.pri} von 5 Sternen`},'★'.repeat(it.pri)):null),
    it.price&&h('span',{class:'price'},eur(it.price)),
+   it.extras?.length&&h('div',{class:'extras'},h('span',{class:'xh'},ico('plus'),'Zubehör – bitte mitbestellen'),
+    it.extras.map(x=>h(ok(x.link)?'a':'div',{class:'xi',href:ok(x.link)?x.link:false,target:ok(x.link)?'_blank':false,rel:ok(x.link)?'noopener noreferrer':false},
+     h('span',{class:'xt'},h('b',{},x.title),x.why&&h('small',{class:'mu'},x.why)),x.price&&h('span',{class:'xp'},eur(x.price)),ok(x.link)&&h('span',{class:'xa','aria-label':'Zum Shop'},'↗')))),
    ok(it.link)&&h('a',{class:'btn',href:it.link,target:'_blank',rel:'noopener noreferrer'},'Zum Shop ↗'),
    o.pub&&(()=>{const slot=h('div',{class:'rslot'});
     const base=()=>put(slot,h('button',{class:'g rbtn',disabled:it.res&&!mine,onclick:e=>it.res?o.onRes(e,''):ask()},it.res?(mine?'Reservierung aufheben':'Schon vergeben'):'Ich besorge das'));
@@ -395,7 +413,7 @@ function tilt(){}function _tilt(g){
  g.addEventListener('pointerout',e=>{const c=e.target.closest('.card');if(c)c.style.transform=''})}
 
 function exportTxt(w){
- const t=[`${icon(w.occasion)} ${w.occasion}-Wunschliste von ${w.name}`,'',...w.items.map((i,n)=>`${n+1}. ${i.top?'[TOP] ':''}${i.title}${i.price?' – '+eur(i.price):''}${i.note?'\n   „'+i.note+'“':''}${i.pri?'  '+'★'.repeat(i.pri):''}${ok(i.link)?'\n   '+i.link:''}`),'',urlOf(w.slug)].join('\n');
+ const t=[`${icon(w.occasion)} ${w.occasion}-Wunschliste von ${w.name}`,'',...w.items.map((i,n)=>`${n+1}. ${i.top?'[TOP] ':''}${i.title}${i.price?' – '+eur(i.price):''}${i.note?'\n   „'+i.note+'“':''}${(i.extras||[]).map(x=>`\n   + Zubehör, bitte mitbestellen: ${x.title}${x.price?' – '+eur(x.price):''}${x.why?' ('+x.why+')':''}${ok(x.link)?' '+x.link:''}`).join('')}${i.pri?'  '+'★'.repeat(i.pri):''}${ok(i.link)?'\n   '+i.link:''}`),'',urlOf(w.slug)].join('\n');
  try{const a=h('a',{href:URL.createObjectURL(new Blob([t],{type:'text/plain;charset=utf-8'})),download:'wunschliste.txt'});document.body.append(a);a.click();a.remove();toast('Liste gespeichert ✓')}catch{toast('Download hier nicht möglich')}}
 
 /* ---------- Anmelden / Registrieren / Passwort vergessen ---------- */
@@ -491,7 +509,7 @@ async function owner(app,id){
    if(!w.items.length)return show('list');
    drawBar();
    const list=sort==='price'?[...w.items].sort((a,b)=>{const A=num(a.price),B=num(b.price);return A===B?0:A-B}):w.items;
-   const total=w.items.reduce((s,i)=>s+(isFinite(num(i.price))?num(i.price):0),0);
+   const pv=p=>isFinite(num(p))?num(p):0,total=w.items.reduce((s,i)=>s+pv(i.price)+(i.extras||[]).reduce((t,x)=>t+pv(x.price),0),0);
    put(stats,h('span',{class:'chip'},`${w.items.length} ${w.items.length===1?'Wunsch':'Wünsche'}`),h('span',{class:'chip'},'Zusammen '+fmt(total)));
    put(seg,h('button',{class:sort==='manual'?'on':'','aria-pressed':String(sort==='manual'),onclick:()=>setSort('manual')},'Eigene Reihenfolge'),h('button',{class:sort==='price'?'on':'','aria-pressed':String(sort==='price'),onclick:()=>setSort('price')},'Nach Preis'));
    tip.textContent=sort==='manual'?'Tipp: Karten ziehen oder ← → antippen für die Reihenfolge. Stift = bearbeiten, Sterne = wie wichtig.':'Sortiert vom günstigsten zum teuersten Wunsch.';
@@ -522,7 +540,14 @@ async function owner(app,id){
    prev.classList.add('load');const r=await api('ogimg',{url:l}).catch(()=>null);prev.classList.remove('load');
    if(r?.img&&!up&&!I.value.trim()&&Lk.value.trim()){I.value=r.img;showPrev(r.img)}};
   Lk.addEventListener('paste',()=>setTimeout(autoImg,50));Lk.addEventListener('change',autoImg);Lk.addEventListener('blur',autoImg);
-  if(ed){Nt.value=ed.note||'';T.value=ed.title||'';P.value=ed.price||'';Lk.value=ed.link||'';if(!up)I.value=ed.img||'';showPrev(up||(okImg(I.value)?I.value:''))}
+  const ex=h('div',{class:'exrows'}),exBtn=h('button',{type:'button',class:'g'},ico('plus'),'Zubehör hinzufügen');
+  const exRow=(x={})=>{if(ex.children.length>=8)return;const r=h('div',{class:'exrow'},
+    h('div',{class:'form2'},fld('Was noch dazu?',h('input',{'data-k':'title',placeholder:'z.B. Micro-SD-Karte 32 GB',value:x.title||'',maxlength:'80'})),fld('Wofür? (freiwillig)',h('input',{'data-k':'why',placeholder:'z.B. für mehr Speicher',value:x.why||'',maxlength:'60'})),
+     fld('Preis',h('input',{'data-k':'price',placeholder:'z.B. 8,99',inputmode:'decimal',value:x.price||''})),fld('Link zum Shop',h('input',{'data-k':'link',placeholder:'z.B. www.otto.de/…',inputmode:'url',value:x.link||''}))),
+    h('button',{type:'button',class:'g exdel',onclick:()=>{r.remove();exBtn.hidden=false}},ico('x'),'Entfernen'));ex.append(r);exBtn.hidden=ex.children.length>=8;r.querySelector('input').focus()};
+  exBtn.onclick=()=>exRow();
+  const exVals=()=>[...ex.children].map(r=>{const v={};r.querySelectorAll('input').forEach(i=>v[i.dataset.k]=i.value.trim());if(v.link&&!ok(v.link))v.link='https://'+v.link;v.price=eur(v.price);return v}).filter(v=>v.title);
+  if(ed){(ed.extras||[]).forEach(x=>exRow(x));Nt.value=ed.note||'';T.value=ed.title||'';P.value=ed.price||'';Lk.value=ed.link||'';if(!up)I.value=ed.img||'';showPrev(up||(okImg(I.value)?I.value:''))}
   const noImg=h('button',{type:'button',class:'g',onclick:()=>{up='';I.value='';F.value='';showPrev('')}},'Bild entfernen');
   return h('div',{class:'box'},h('h3',{},ed?'Wunsch bearbeiten':'Neuen Wunsch hinzufügen'),h('p',{class:'mu small'},ed?'Ändere, was du möchtest – Reservierungen von Freunden bleiben erhalten.':'Nur der Name ist Pflicht – alles andere ist freiwillig.'),
    h('div',{class:'form2'},fld('Was wünschst du dir? *',T),fld('Preis',P,'€ wird automatisch ergänzt'),fld('Link zum Shop',Lk,'Wo man es kaufen kann'),fld('Bild-Link',I,'oder unten ein Foto hochladen')),
@@ -531,8 +556,9 @@ async function owner(app,id){
    (()=>{const sw=h('button',{type:'button',class:'sw'+(top?' on':''),role:'switch','aria-checked':String(top),onclick:()=>{top=!top;sw.classList.toggle('on',top);sw.setAttribute('aria-checked',String(top))}},
      h('span',{class:'swi'},ico('flame')),h('span',{class:'swt'},h('b',{},'Als TOP-Wunsch markieren'),h('small',{class:'mu'},'Wird auf der Karte groß hervorgehoben und steht ganz oben')),h('span',{class:'knob'}));return sw})(),
    fld('Kleine Nachricht (freiwillig)',Nt,'Erscheint auf der Karte – max. 140 Zeichen'),
+   h('div',{class:'exbox'},h('span',{class:'fl'},'Zubehör – bitte mitbestellen (freiwillig)'),h('small',{class:'mu'},'Passendes Zubehör, das man gleich mitkaufen sollte – z.B. zum ESP32 eine Micro-SD-Karte für mehr Speicher.'),ex,exBtn),
    h('button',{class:'full',onclick:async e=>{const t=T.value.trim();if(!t){T.focus();return toast('Bitte gib ein, was du dir wünschst')}burst(e);
-    let l=Lk.value.trim();if(l&&!ok(l))l='https://'+l;const d={title:t,link:l,price:eur(P.value),img:up||I.value.trim(),pri,top,note:Nt.value.trim().slice(0,140)};
+    let l=Lk.value.trim();if(l&&!ok(l))l='https://'+l;const d={title:t,link:l,price:eur(P.value),img:up||I.value.trim(),pri,top,note:Nt.value.trim().slice(0,140),extras:exVals()};
     if(ed&&w.items.includes(ed)){Object.assign(ed,d);await save();toast('Änderungen gespeichert')}else{w.items.push({id:Date.now(),...d});await save();toast('Wunsch hinzugefügt')}show('list')}},ed?'Änderungen speichern':'Zur Liste hinzufügen'),
    ed&&h('button',{class:'g full',onclick:()=>show('list')},'Abbrechen'))}
 

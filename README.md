@@ -8,6 +8,7 @@ Läuft komplett auf Netlify (kostenlos): Netlify Functions + Netlify Blobs – *
 - 🪄 Produktbild wird automatisch aus dem Shop-Link erkannt (klappt es nicht, passiert einfach nichts)
 - 🎁 Wünsche mit Bild (URL oder Upload), Preis (€ wird automatisch ergänzt) und Shop-Link
 - 🔥 TOP-Wunsch per Schalter markieren (Abzeichen im Bild, steht für Freunde ganz oben)
+- 🧩 Zubehör – bitte mitbestellen: passende Extras pro Wunsch (z.B. ESP32 + Micro-SD-Karte für mehr Speicher)
 - 💬 Kleine persönliche Nachricht pro Wunsch (z.B. „Mama, bitte – das brauche ich!“)
 - ⭐ 1–5 Sterne: wie sehr du dir etwas wünschst
 - ✅ **Reservieren:** Freunde markieren „Ich besorge das“ – du als Besitzer siehst das nicht (Überraschung bleibt)
