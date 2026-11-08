@@ -1,6 +1,64 @@
 // Backend: Netlify Function + Netlify Blobs (kostenlos, kein API-Key, keine externe DB)
 import { getStore } from '@netlify/blobs';
 import { scryptSync, randomBytes, timingSafeEqual } from 'node:crypto';
+import { lookup } from 'node:dns/promises';
+import { isIP } from 'node:net';
+
+// ---------- Produktbild aus einem Shop-Link erkennen ----------
+// Nur öffentliche Adressen abrufen (keine internen Server/IPs)
+const privateIp = ip => {
+  if (isIP(ip) === 6) { const l = ip.toLowerCase(); if (l.startsWith('::ffff:')) return privateIp(l.slice(7)); return l === '::1' || l === '::' || /^f[cd]/.test(l) || /^fe[89ab]/.test(l); }
+  const [a, b] = ip.split('.').map(Number);
+  return a === 10 || a === 127 || a === 0 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127) || a >= 224;
+};
+const safeUrl = async raw => {
+  let u; try { u = new URL(raw); } catch { return null; }
+  if (!/^https?:$/.test(u.protocol) || u.username || u.password || (u.port && !['80', '443'].includes(u.port))) return null;
+  const host = u.hostname.replace(/^\[|\]$/g, '');
+  if (/^localhost$|\.local$|\.internal$/i.test(host)) return null;
+  try { const r = isIP(host) ? [{ address: host }] : await lookup(host, { all: true }); if (!r.length || r.some(x => privateIp(x.address))) return null; } catch { return null; }
+  return u;
+};
+const decode = t => t.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#0?39;|&apos;/g, "'").replace(/&#x2F;/gi, '/').replace(/&lt;/g, '<').replace(/&gt;/g, '>').trim();
+const findImage = (html, base) => {
+  const abs = v => { try { const u = new URL(decode(v), base); return /^https?:$/.test(u.protocol) ? u.href : ''; } catch { return ''; } };
+  // 1. og:image / twitter:image (Attribut-Reihenfolge egal)
+  for (const m of html.matchAll(/<meta\b[^>]*>/gi)) {
+    const tag = m[0], key = (tag.match(/(?:property|name|itemprop)\s*=\s*["']([^"']+)["']/i) || [])[1]?.toLowerCase();
+    if (['og:image', 'og:image:url', 'og:image:secure_url', 'twitter:image', 'twitter:image:src', 'image'].includes(key)) {
+      const c = (tag.match(/content\s*=\s*"([^"]+)"/i) || tag.match(/content\s*=\s*'([^']+)'/i) || [])[1];
+      const r = c && abs(c); if (r) return r;
+    }
+  }
+  // 2. Strukturierte Produktdaten (JSON-LD)
+  for (const m of html.matchAll(/<script[^>]*application\/ld\+json[^>]*>([\s\S]*?)<\/script>/gi)) {
+    const im = m[1].match(/"image"\s*:\s*(?:\[\s*)?(?:\{[^}]*?"url"\s*:\s*)?"([^"]+)"/i);
+    const r = im && abs(im[1].replace(/\\\//g, '/')); if (r) return r;
+  }
+  // 3. <link rel="image_src">, Amazon-Hauptbild
+  const l = html.match(/<link[^>]*rel\s*=\s*["']image_src["'][^>]*href\s*=\s*["']([^"']+)["']/i) || html.match(/data-old-hires\s*=\s*"([^"]+)"/i) || html.match(/id="landingImage"[^>]*src="([^"]+)"/i);
+  return l ? abs(l[1]) : '';
+};
+const fetchProductImage = async raw => {
+  let u = await safeUrl(raw); if (!u) return '';
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), 7000);
+  try {
+    let res;
+    for (let hop = 0; hop < 4; hop++) { // Weiterleitungen einzeln prüfen
+      res = await fetch(u, { redirect: 'manual', signal: ctl.signal, headers: { 'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36', accept: 'text/html,application/xhtml+xml', 'accept-language': 'de-DE,de;q=0.9' } });
+      if (res.status >= 300 && res.status < 400 && res.headers.get('location')) { u = await safeUrl(new URL(res.headers.get('location'), u).href); if (!u) return ''; continue; }
+      break;
+    }
+    if (!res.ok || !/html/i.test(res.headers.get('content-type') || '')) return '';
+    // höchstens 1,5 MB lesen
+    const reader = res.body.getReader(), parts = []; let size = 0;
+    while (size < 1500000) { const { done, value } = await reader.read(); if (done) break; parts.push(value); size += value.length; }
+    reader.cancel().catch(() => {});
+    const html = new TextDecoder().decode(Buffer.concat(parts));
+    const img = findImage(html, u.href);
+    return img.length <= 1000 ? img : '';
+  } catch { return ''; } finally { clearTimeout(t); }
+};
 
 const J = (o, s = 200) => Response.json(o, { status: s });
 const str = (v, n) => String(v ?? '').trim().slice(0, n);
@@ -36,6 +94,9 @@ export default async (req, context) => {
 
   // ---------- öffentlich ----------
   if (a === 'ping') return J({ ok: true });
+
+  // Produktbild zu einem Shop-Link suchen (leise: bei Fehler einfach leer)
+  if (a === 'ogimg') return J({ img: http(d.url) ? await fetchProductImage(str(d.url, 1000)) : '' });
 
   if (a === 'get') {
     const w = await getW(d.slug);

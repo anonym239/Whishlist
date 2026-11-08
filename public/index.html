@@ -161,6 +161,8 @@ textarea:focus{border-color:var(--tx);box-shadow:0 0 0 3px color-mix(in srgb,var
 .imgrow{display:flex;gap:16px;align-items:center;margin:8px 0}
 .imgrow .fld{flex:1}
 .prev{width:92px;height:92px;flex:none;border-radius:12px;background:var(--sf2) center/cover;border:1px dashed var(--bd2);display:grid;place-items:center;color:var(--mu)}
+.prev.load{animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.45}}
 .prev svg.i{width:30px;height:30px;stroke-width:1.4}
 .shares{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin:14px 0 4px}
 .sh{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:14px 8px;min-height:88px;border:1px solid var(--bd);border-radius:14px;font-weight:600;font-size:14.5px;color:var(--tx);background:var(--bg);text-decoration:none;box-shadow:none;transition:transform .15s,border-color .15s,background .15s}
@@ -515,6 +517,11 @@ async function owner(app,id){
   I.addEventListener('input',()=>{if(!up)showPrev(okImg(I.value.trim())?I.value.trim():'')});
   F.addEventListener('change',async()=>{up=F.files[0]?await shrink(F.files[0]):'';showPrev(up||(okImg(I.value.trim())?I.value.trim():''))});
   P.addEventListener('blur',()=>{P.value=eur(P.value)});
+  // Shop-Link eingefügt -> Produktbild automatisch suchen (nur wenn noch kein Bild da ist, ohne Meldung)
+  let lastLk='';const autoImg=async()=>{let l=Lk.value.trim();if(!l||up||I.value.trim())return;if(!ok(l))l='https://'+l;if(l===lastLk)return;lastLk=l;
+   prev.classList.add('load');const r=await api('ogimg',{url:l}).catch(()=>null);prev.classList.remove('load');
+   if(r?.img&&!up&&!I.value.trim()&&Lk.value.trim()){I.value=r.img;showPrev(r.img)}};
+  Lk.addEventListener('paste',()=>setTimeout(autoImg,50));Lk.addEventListener('change',autoImg);Lk.addEventListener('blur',autoImg);
   if(ed){Nt.value=ed.note||'';T.value=ed.title||'';P.value=ed.price||'';Lk.value=ed.link||'';if(!up)I.value=ed.img||'';showPrev(up||(okImg(I.value)?I.value:''))}
   const noImg=h('button',{type:'button',class:'g',onclick:()=>{up='';I.value='';F.value='';showPrev('')}},'Bild entfernen');
   return h('div',{class:'box'},h('h3',{},ed?'Wunsch bearbeiten':'Neuen Wunsch hinzufügen'),h('p',{class:'mu small'},ed?'Ändere, was du möchtest – Reservierungen von Freunden bleiben erhalten.':'Nur der Name ist Pflicht – alles andere ist freiwillig.'),

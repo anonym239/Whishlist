@@ -5,6 +5,7 @@ Läuft komplett auf Netlify (kostenlos): Netlify Functions + Netlify Blobs – *
 
 ## Funktionen
 - ✏️ Gespeicherte Wünsche nachträglich bearbeiten (Stift-Symbol auf der Karte)
+- 🪄 Produktbild wird automatisch aus dem Shop-Link erkannt (klappt es nicht, passiert einfach nichts)
 - 🎁 Wünsche mit Bild (URL oder Upload), Preis (€ wird automatisch ergänzt) und Shop-Link
 - 🔥 TOP-Wunsch per Schalter markieren (Abzeichen im Bild, steht für Freunde ganz oben)
 - 💬 Kleine persönliche Nachricht pro Wunsch (z.B. „Mama, bitte – das brauche ich!“)
