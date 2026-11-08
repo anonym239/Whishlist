@@ -68,10 +68,6 @@ const hash = (v, salt) => scryptSync(String(v), salt, 32);
 const same = (hex, v, salt) => timingSafeEqual(Buffer.from(hex, 'hex'), hash(v, salt));
 const rnd = n => randomBytes(n).toString('hex');
 const sha = v => createHash('sha256').update(String(v)).digest('hex');
-// Kurzer Code zum Aufheben auf einem anderen Gerät (ohne leicht verwechselbare Zeichen)
-const ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const mkCode = () => Array.from(randomBytes(6), b => ABC[b % ABC.length]).join('');
-const normCode = c => String(c ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
 const DAY = 86400000, SESSION_MS = 30 * DAY;
 // Jedes Zubehör braucht eine feste Kennung (älteres Zubehör hatte keine) – immer gleich berechnet
 const okX = v => Number.isSafeInteger(Number(v)) && Number(v) > 0;
@@ -105,7 +101,7 @@ export default async (req, context) => {
 
   // Einmalige Aufräum-Aktion (vom Betreiber gewünscht): alle Reservierungen und Anteile auf allen Listen aufheben.
   // Läuft genau einmal beim ersten Aufruf nach dem Update; die Wünsche selbst bleiben unverändert.
-  const MIG = 'mig:reset-reservations-2026-11-08';
+  const MIG = 'mig:reset-reservations-2026-11-08b';
   if (!(await st.get(MIG))) {
     const { blobs } = await st.list({ prefix: 'w:' }); let changed = 0;
     for (const b of blobs) {
@@ -166,26 +162,19 @@ export default async (req, context) => {
     // Zubehör nur über seine Kennung – fehlt sie, niemals stattdessen den ganzen Wunsch reservieren
     const t = 'xid' in d ? (okX(d.xid) ? (it.extras || []).find(x => x.xid === Number(d.xid)) : null) : it;
     if (!t) return J({ error: 'Zubehör nicht gefunden' }, 404);
-    // Schlüssel (gleiches Gerät) oder Code (anderes Gerät) prüfen; falsche Codes zählen als Fehlversuch
-    const code = normCode(d.code);
-    const proven = async (rk, rc) => {
-      if (rk && key && sha(key) === rk) return true;
-      if (rc && code) { const m = await lockedFor(['ip:' + ip]); if (m) return false; if (sha(code) === rc) return true; await failed('ip:' + ip, MAX_IP); }
-      return false;
-    };
-    const denied = msg => J({ error: code ? 'Der Code stimmt nicht' : msg, needCode: true }, 403);
+    // Nur das Gerät, das reserviert hat, besitzt den passenden Schlüssel und kann wieder aufheben
+    const mine = rk => !!(rk && key && sha(key) === rk);
     if (op === 'res') {
       if (d.on) {
         if (t.res) return J({ error: 'Das hat gerade schon jemand reserviert' }, 409);
         if (t === it && it.parts?.length) return J({ error: 'Hier wird schon zusammengelegt – gib einfach auch etwas dazu' }, 409);
-        delete t.rk; delete t.rc; delete t.rv; t.res = true; if (by) t.by = by; else delete t.by;
-        if (a === 'reserve') return done(); // alte Seitenversion: ohne Schutz, damit sie wieder aufgehoben werden kann
-        const k = rnd(16), c = mkCode(); t.rk = sha(k); t.rc = sha(c); t.rv = 2;
-        return done({ key: k, code: c });
+        t.res = true; if (by) t.by = by; else delete t.by; delete t.rc; delete t.rv;
+        if (a === 'reserve') { delete t.rk; return done(); } // alte Seitenversion: ohne Schlüssel
+        const k = rnd(16); t.rk = sha(k);
+        return done({ key: k });
       }
       if (!t.res) return J({ ok: true });
-      // Geschützt sind nur Reservierungen mit Code (rv 2); ältere lassen sich wie früher aufheben
-      if (t.rv === 2 && !(await proven(t.rk, t.rc))) return denied('Nur wer reserviert hat, kann die Reservierung aufheben – mit dem Code geht es auch auf einem anderen Gerät');
+      if (t.rk && !mine(t.rk)) return J({ error: 'Aufheben geht nur auf dem Gerät, mit dem reserviert wurde' }, 403);
       t.res = false; delete t.by; delete t.rk; delete t.rc; delete t.rv; return done();
     }
     if (op === 'chip' && t === it) {
@@ -195,12 +184,11 @@ export default async (req, context) => {
         const amt = Math.round(Number(String(d.amt ?? '').replace(',', '.')) * 100) / 100;
         if (!(amt >= 1 && amt <= 10000)) return J({ error: 'Bitte einen Betrag zwischen 1 und 10.000 € angeben' }, 400);
         if (it.parts.length >= 30) return J({ error: 'Es geben schon sehr viele etwas dazu' }, 400);
-        const k = rnd(16), c = mkCode(), pid = rnd(4); it.parts.push({ pid, amt, ...(by ? { by } : {}), rk: sha(k), rc: sha(c) });
-        return done({ key: k, pid, code: c });
+        const k = rnd(16), pid = rnd(4); it.parts.push({ pid, amt, ...(by ? { by } : {}), rk: sha(k) });
+        return done({ key: k, pid });
       }
-      let p = it.parts.find(p => p.pid === str(d.pid, 8) && key && sha(key) === p.rk);
-      if (!p && code) { p = it.parts.find(p => p.rc && sha(code) === p.rc); if (!p && !(await lockedFor(['ip:' + ip]))) await failed('ip:' + ip, MAX_IP); }
-      if (!p) return denied('Nur wer etwas dazugegeben hat, kann es zurücknehmen – mit dem Code geht es auch auf einem anderen Gerät');
+      const p = it.parts.find(p => p.pid === str(d.pid, 8)); if (!p) return J({ ok: true });
+      if (!mine(p.rk)) return J({ error: 'Zurücknehmen geht nur auf dem Gerät, mit dem du etwas dazugegeben hast' }, 403);
       it.parts = it.parts.filter(x => x !== p); return done();
     }
     return J({ error: 'Unbekannte Aktion' }, 400);

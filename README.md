@@ -12,7 +12,7 @@ Läuft komplett auf Netlify (kostenlos): Netlify Functions + Netlify Blobs – *
 - 💬 Kleine persönliche Nachricht pro Wunsch (z.B. „Mama, bitte – das brauche ich!“)
 - ⭐ 1–5 Sterne: wie sehr du dir etwas wünschst
 - ✅ **Reservieren:** Freunde markieren „Ich besorge das“ – du als Besitzer siehst das nicht (Überraschung bleibt)
-- 🔐 Nur wer reserviert hat, kann die Reservierung wieder aufheben – auf dem gleichen Gerät mit einem Tipp, auf einem anderen Gerät mit dem 6-stelligen Code (Code kopieren/an sich selbst schicken; jederzeit unter „Meine Reservierungen & Codes“)
+- 🔐 Nur wer reserviert hat, kann die Reservierung wieder aufheben – auf dem Gerät, mit dem reserviert wurde (ein Tipp genügt)
 - 🧩 Zubehör einzeln reservieren (z.B. nur die SD-Karte)
 - 🤝 Zusammenlegen: mehrere Gäste geben Beträge zu einem teuren Wunsch, mit Fortschrittsbalken
 - 💶 Preisfilter für Gäste (bis 20 €, 20–50 €, …)
