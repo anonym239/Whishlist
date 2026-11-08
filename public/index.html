@@ -120,15 +120,49 @@ textarea:focus{border-color:var(--tx);box-shadow:0 0 0 3px color-mix(in srgb,var
 .knob{width:44px;height:26px;border-radius:99px;background:var(--bd2);position:relative;flex:none;transition:background .2s}
 .knob::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .2s}
 .sw.on .knob{background:var(--tx)}.sw.on .knob::after{transform:translateX(18px)}
-.extras{width:100%;margin:6px 0 8px;border:1px solid var(--bd);border-radius:12px;background:var(--bg);overflow:hidden}
-.xh{display:flex;align-items:center;gap:5px;padding:7px 10px 5px;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mu)}
-.xh svg.i{width:13px;height:13px;stroke-width:2.4}
-.xi{display:flex;align-items:center;gap:8px;padding:8px 10px;border-top:1px solid var(--bd);color:var(--tx);text-decoration:none;font-size:14px;line-height:1.25}
-a.xi:hover{background:var(--sf2)}
-.xt{flex:1;min-width:0;display:flex;flex-direction:column;overflow-wrap:anywhere}.xt b{font-weight:600}.xt small{font-size:12px}
-.xp{font-family:var(--serif);font-size:16px;white-space:nowrap}
-.xa{color:var(--mu);font-size:14px}
-[hidden]{display:none!important}
+.xbtn{margin-top:auto;width:100%}
+.xbtn svg.i{width:16px;height:16px;stroke-width:2.2}
+body.noscroll{overflow:hidden}
+.sheetbg{position:fixed;inset:0;z-index:200;background:rgba(15,14,12,.5);display:flex;align-items:center;justify-content:center;padding:16px;animation:fade .2s both}
+.sheet{background:var(--sf);color:var(--tx);border:1px solid var(--bd);border-radius:18px;width:100%;max-width:520px;max-height:min(86vh,760px);display:flex;flex-direction:column;box-shadow:0 30px 80px rgba(0,0,0,.35);animation:in .25s both}
+.shead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:18px 18px 12px;border-bottom:1px solid var(--bd)}
+.shead h3{font-family:var(--serif);font-weight:400;font-size:26px;line-height:1.1;margin:2px 0 0;overflow-wrap:anywhere}
+.xk{display:block;font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mu)}
+.sbody{overflow-y:auto;padding:12px 18px;display:grid;gap:10px;overscroll-behavior:contain}
+.xrow{display:flex;align-items:center;gap:12px;padding:10px;border:1px solid var(--bd);border-radius:12px;background:var(--bg)}
+.xrow.main{border-color:var(--bd2)}
+.xth{width:64px;height:64px;flex:none;border-radius:10px;background:var(--sf2) center/cover;border:1px solid var(--bd);display:grid;place-items:center;color:var(--bd2)}
+.xth svg.i{width:26px;height:26px;stroke-width:1.4}
+.xt{flex:1;min-width:0;display:flex;flex-direction:column;overflow-wrap:anywhere;line-height:1.3}.xt b{font-weight:600;font-size:15px}.xt small{font-size:12.5px}
+.xp{font-family:var(--serif);font-size:18px;white-space:nowrap}
+.btn.xs{min-height:38px;padding:6px 12px;font-size:13.5px;flex:none}
+.xsep{margin:6px 2px 0;font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mu)}
+.sfoot{display:flex;justify-content:space-between;align-items:center;padding:12px 18px calc(14px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--bd)}
+@keyframes fade{from{opacity:0}}
+@media (max-width:560px){
+ .sheetbg{align-items:flex-end;padding:0}
+ .sheet{max-width:none;border-radius:18px 18px 0 0;max-height:88vh;animation:up .28s cubic-bezier(.2,.8,.2,1) both}
+ .xth{width:54px;height:54px}
+ .xbtn{font-size:13px;padding:8px 6px;gap:5px}
+}
+@keyframes up{from{transform:translateY(100%)}}
+.prev.sm{width:76px;height:76px}
+.exsum{display:none;align-items:center;gap:10px}
+.exrow.closed{padding:8px}.exrow.closed .exsum{display:flex}.exrow.closed .exbody{display:none}
+.exsum .xth{width:46px;height:46px}.exsum .xth svg.i{width:20px;height:20px}
+.exsum .icon{width:38px;min-height:38px}
+.exact{justify-content:flex-start;margin:6px 0 0}
+.exrow .fld small{display:none}
+@media (max-width:560px){
+ .exrow{padding:4px 10px 10px}
+ .exrow .form2{grid-template-columns:1fr 1fr;gap:0 10px}
+ .exrow .fl{font-size:12.5px}
+ .exrow input{min-height:42px;padding:9px 10px;font-size:15px}
+ .exrow .prev.sm{width:64px;height:64px}
+ .lg{display:none}
+ .note{font-size:15px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+}
+.xin{flex:1;min-width:0}
 .exbox{margin:12px 0 4px;padding:14px;border:1px dashed var(--bd2);border-radius:12px}
 .exbox>small{display:block;font-size:12.5px;margin-bottom:6px}
 .exrows{display:grid;gap:10px;margin:8px 0}
@@ -393,10 +427,8 @@ function card(it,i,o){
    it.note&&h('p',{class:'note'},'„'+it.note+'“'),
    o.own?starPick(it.pri||0,o.onPri,'cst'):(it.pri?h('span',{class:'pri',title:'Wie sehr gewünscht','aria-label':`${it.pri} von 5 Sternen`},'★'.repeat(it.pri)):null),
    it.price&&h('span',{class:'price'},eur(it.price)),
-   it.extras?.length&&h('div',{class:'extras'},h('span',{class:'xh'},ico('plus'),'Zubehör – bitte mitbestellen'),
-    it.extras.map(x=>h(ok(x.link)?'a':'div',{class:'xi',href:ok(x.link)?x.link:false,target:ok(x.link)?'_blank':false,rel:ok(x.link)?'noopener noreferrer':false},
-     h('span',{class:'xt'},h('b',{},x.title),x.why&&h('small',{class:'mu'},x.why)),x.price&&h('span',{class:'xp'},eur(x.price)),ok(x.link)&&h('span',{class:'xa','aria-label':'Zum Shop'},'↗')))),
-   ok(it.link)&&h('a',{class:'btn',href:it.link,target:'_blank',rel:'noopener noreferrer'},'Zum Shop ↗'),
+   it.extras?.length?h('button',{class:'btn xbtn',onclick:()=>extrasSheet(it)},ico('plus'),h('span',{class:'lg'},'Shop & '),`Zubehör (${it.extras.length})`)
+    :ok(it.link)&&h('a',{class:'btn',href:it.link,target:'_blank',rel:'noopener noreferrer'},'Zum Shop ↗'),
    o.pub&&(()=>{const slot=h('div',{class:'rslot'});
     const base=()=>put(slot,h('button',{class:'g rbtn',disabled:it.res&&!mine,onclick:e=>it.res?o.onRes(e,''):ask()},it.res?(mine?'Reservierung aufheben':'Schon vergeben'):'Ich besorge das'));
     const ask=()=>{const N=h('input',{placeholder:'Dein Name (freiwillig)','aria-label':'Dein Name (freiwillig)',maxlength:'30',autocomplete:'given-name',value:ls.get('wl-gname')||''});
@@ -408,6 +440,23 @@ function card(it,i,o){
     h('button',{class:'g',title:'Nach vorne','aria-label':'Nach vorne',disabled:i===0,onclick:()=>o.move(-1)},'←'),
     h('button',{class:'g',title:'Nach hinten','aria-label':'Nach hinten',disabled:o.last,onclick:()=>o.move(1)},'→'))))}
 
+/* Fenster: Wunsch + Zubehör */
+function extrasSheet(it){
+ const prevFocus=document.activeElement,pv=p=>isFinite(num(p))?num(p):0;
+ const sum=pv(it.price)+it.extras.reduce((t,x)=>t+pv(x.price),0);
+ const thumb=src=>{const d=h('div',{class:'xth'},okImg(src)?'':ico('gift'));if(okImg(src))d.style.backgroundImage=`url("${src.replace(/"/g,'%22')}")`;return d};
+ const row=(x,main)=>(x=main?{...x,why:x.note}:x,h('div',{class:'xrow'+(main?' main':'')},thumb(x.img),
+  h('div',{class:'xt'},main&&h('span',{class:'xk'},'Hauptwunsch'),h('b',{},x.title),x.why&&h('small',{class:'mu'},x.why),x.price&&h('span',{class:'xp'},eur(x.price))),
+  ok(x.link)&&h('a',{class:'btn xs',href:x.link,target:'_blank',rel:'noopener noreferrer'},'Shop ↗')));
+ const close=()=>{bg.remove();document.removeEventListener('keydown',esc);document.body.classList.remove('noscroll');prevFocus?.focus?.()};
+ const esc=e=>{if(e.key==='Escape')close()};
+ const x=h('button',{class:'g icon xclose','aria-label':'Schließen',onclick:close},ico('x'));
+ const sheet=h('div',{class:'sheet',role:'dialog','aria-modal':'true','aria-label':'Zubehör zu '+it.title},
+  h('div',{class:'shead'},h('div',{},h('span',{class:'xk'},'Zubehör – bitte mitbestellen'),h('h3',{},it.title)),x),
+  h('div',{class:'sbody'},row(it,true),h('p',{class:'xsep'},`Dazu bitte mitbestellen · ${it.extras.length} ${it.extras.length===1?'Teil':'Teile'}`),it.extras.map(e=>row(e))),
+  sum>0&&h('div',{class:'sfoot'},h('span',{class:'mu'},'Alles zusammen'),h('b',{class:'xp'},fmt(sum))));
+ const bg=h('div',{class:'sheetbg',onclick:e=>{if(e.target===bg)close()}},sheet);
+ document.body.append(bg);document.body.classList.add('noscroll');document.addEventListener('keydown',esc);x.focus()}
 function tilt(){}function _tilt(g){
  g.addEventListener('pointermove',e=>{if(e.pointerType!=='mouse'||g.querySelector('.drag'))return;const c=e.target.closest('.card');if(!c)return;const r=c.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;c.style.transform=`perspective(700px) rotateY(${x*12}deg) rotateX(${-y*12}deg) translateY(-6px)`});
  g.addEventListener('pointerout',e=>{const c=e.target.closest('.card');if(c)c.style.transform=''})}
@@ -541,13 +590,30 @@ async function owner(app,id){
    if(r?.img&&!up&&!I.value.trim()&&Lk.value.trim()){I.value=r.img;showPrev(r.img)}};
   Lk.addEventListener('paste',()=>setTimeout(autoImg,50));Lk.addEventListener('change',autoImg);Lk.addEventListener('blur',autoImg);
   const ex=h('div',{class:'exrows'}),exBtn=h('button',{type:'button',class:'g'},ico('plus'),'Zubehör hinzufügen');
-  const exRow=(x={})=>{if(ex.children.length>=8)return;const r=h('div',{class:'exrow'},
+  const exRow=(x={},isNew=true)=>{if(ex.children.length>=8)return;
+    const xp=h('div',{class:'prev sm','aria-hidden':'true'},ico('img')),XI=h('input',{'data-k':'img',placeholder:'Bild-Link (https://…)',inputmode:'url',value:/^data:/.test(x.img||'')?'':(x.img||'')}),XF=h('input',{type:'file',accept:'image/*','aria-label':'Foto vom Zubehör hochladen'});
+    const xShow=src=>{xp.style.backgroundImage=src?`url("${src.replace(/"/g,'%22')}")`:'';xp.replaceChildren(...(src?[]:[ico('img')]))};
+    let xLast='';const xAuto=async()=>{let l=r.querySelector('[data-k=link]').value.trim();if(!l||r._up||XI.value.trim())return;if(!ok(l))l='https://'+l;if(l===xLast)return;xLast=l;
+     xp.classList.add('load');const res=await api('ogimg',{url:l}).catch(()=>null);xp.classList.remove('load');if(res?.img&&!r._up&&!XI.value.trim()){XI.value=res.img;xShow(res.img)}};
+    XI.addEventListener('input',()=>{if(!r._up)xShow(okImg(XI.value.trim())?XI.value.trim():'')});
+    XF.addEventListener('change',async()=>{r._up=XF.files[0]?await shrink(XF.files[0],320):'';xShow(r._up||(okImg(XI.value.trim())?XI.value.trim():''))});
+    const sum=h('div',{class:'exsum'}),body=h('div',{class:'exbody'});
+    const r=h('div',{class:'exrow'},sum,body);body.append(
     h('div',{class:'form2'},fld('Was noch dazu?',h('input',{'data-k':'title',placeholder:'z.B. Micro-SD-Karte 32 GB',value:x.title||'',maxlength:'80'})),fld('Wofür? (freiwillig)',h('input',{'data-k':'why',placeholder:'z.B. für mehr Speicher',value:x.why||'',maxlength:'60'})),
-     fld('Preis',h('input',{'data-k':'price',placeholder:'z.B. 8,99',inputmode:'decimal',value:x.price||''})),fld('Link zum Shop',h('input',{'data-k':'link',placeholder:'z.B. www.otto.de/…',inputmode:'url',value:x.link||''}))),
-    h('button',{type:'button',class:'g exdel',onclick:()=>{r.remove();exBtn.hidden=false}},ico('x'),'Entfernen'));ex.append(r);exBtn.hidden=ex.children.length>=8;r.querySelector('input').focus()};
-  exBtn.onclick=()=>exRow();
-  const exVals=()=>[...ex.children].map(r=>{const v={};r.querySelectorAll('input').forEach(i=>v[i.dataset.k]=i.value.trim());if(v.link&&!ok(v.link))v.link='https://'+v.link;v.price=eur(v.price);return v}).filter(v=>v.title);
-  if(ed){(ed.extras||[]).forEach(x=>exRow(x));Nt.value=ed.note||'';T.value=ed.title||'';P.value=ed.price||'';Lk.value=ed.link||'';if(!up)I.value=ed.img||'';showPrev(up||(okImg(I.value)?I.value:''))}
+     fld('Preis',h('input',{'data-k':'price',placeholder:'z.B. 8,99',inputmode:'decimal',value:x.price||''})),fld('Link zum Shop',h('input',{'data-k':'link',placeholder:'z.B. www.otto.de/…',inputmode:'url',value:x.link||''}),'Bild wird wenn möglich automatisch erkannt')),
+    h('div',{class:'imgrow'},xp,h('div',{class:'xin'},fld('Bild-Link',XI),fld('oder Foto hochladen',XF))),
+    h('div',{class:'tools exact'},h('button',{type:'button',class:'g exdel',onclick:()=>{r.remove();exBtn.hidden=false}},ico('x'),'Entfernen'),h('button',{type:'button',class:'g exdel',onclick:()=>fold(true)},ico('check'),'Fertig')));
+    const fold=c=>{if(c&&!r.querySelector('[data-k=title]').value.trim())return r.querySelector('[data-k=title]').focus();r.classList.toggle('closed',c);if(!c)return;
+     const g=k=>r.querySelector(`[data-k=${k}]`).value.trim(),th=h('div',{class:'xth'});const src=r._up||(okImg(XI.value.trim())?XI.value.trim():'');if(src)th.style.backgroundImage=`url("${src.replace(/"/g,'%22')}")`;else th.append(ico('img'));
+     put(sum,th,h('div',{class:'xt'},h('b',{},g('title')),h('small',{class:'mu'},[g('why'),g('price')&&eur(g('price'))].filter(Boolean).join(' · ')||'Ohne Preis')),
+      h('button',{type:'button',class:'g icon',title:'Bearbeiten','aria-label':'Zubehör bearbeiten',onclick:()=>fold(false)},ico('pen')),
+      h('button',{type:'button',class:'g icon',title:'Entfernen','aria-label':'Zubehör entfernen',onclick:()=>{r.remove();exBtn.hidden=false}},ico('x')))};
+    r._up=/^data:image\//.test(x.img||'')?x.img:'';xShow(r._up||(okImg(x.img)?x.img:''));
+    const LI=r.querySelector('[data-k=link]');LI.addEventListener('paste',()=>setTimeout(xAuto,50));LI.addEventListener('change',xAuto);LI.addEventListener('blur',xAuto);
+    ex.append(r);exBtn.hidden=ex.children.length>=8;if(isNew)r.querySelector('input').focus();else fold(true)};
+  exBtn.onclick=()=>{[...ex.children].forEach(c=>{if(!c.classList.contains('closed')&&c.querySelector('[data-k=title]').value.trim())c.querySelector('.exact button:last-child').click()});exRow()};
+  const exVals=()=>[...ex.children].map(r=>{const v={};r.querySelectorAll('input[data-k]').forEach(i=>v[i.dataset.k]=i.value.trim());v.img=r._up||(okImg(v.img)?v.img:'');if(v.link&&!ok(v.link))v.link='https://'+v.link;v.price=eur(v.price);return v}).filter(v=>v.title);
+  if(ed){(ed.extras||[]).forEach(x=>exRow(x,false));Nt.value=ed.note||'';T.value=ed.title||'';P.value=ed.price||'';Lk.value=ed.link||'';if(!up)I.value=ed.img||'';showPrev(up||(okImg(I.value)?I.value:''))}
   const noImg=h('button',{type:'button',class:'g',onclick:()=>{up='';I.value='';F.value='';showPrev('')}},'Bild entfernen');
   return h('div',{class:'box'},h('h3',{},ed?'Wunsch bearbeiten':'Neuen Wunsch hinzufügen'),h('p',{class:'mu small'},ed?'Ändere, was du möchtest – Reservierungen von Freunden bleiben erhalten.':'Nur der Name ist Pflicht – alles andere ist freiwillig.'),
    h('div',{class:'form2'},fld('Was wünschst du dir? *',T),fld('Preis',P,'€ wird automatisch ergänzt'),fld('Link zum Shop',Lk,'Wo man es kaufen kann'),fld('Bild-Link',I,'oder unten ein Foto hochladen')),
@@ -617,7 +683,7 @@ function pub(app,w){
  draw()}
 
 /* ---------- Bild verkleinern ---------- */
-const shrink=f=>new Promise(r=>{const i=new Image,u=URL.createObjectURL(f);i.onload=()=>{const k=Math.min(1,480/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);URL.revokeObjectURL(u);r(c.toDataURL('image/jpeg',.7))};i.onerror=()=>{URL.revokeObjectURL(u);r('')};i.src=u});
+const shrink=(f,max=480)=>new Promise(r=>{const i=new Image,u=URL.createObjectURL(f);i.onload=()=>{const k=Math.min(1,max/Math.max(i.width,i.height)),c=document.createElement('canvas');c.width=i.width*k;c.height=i.height*k;c.getContext('2d').drawImage(i,0,0,c.width,c.height);URL.revokeObjectURL(u);r(c.toDataURL('image/jpeg',.7))};i.onerror=()=>{URL.revokeObjectURL(u);r('')};i.src=u});
 
 /* ---------- Seite aufbauen ---------- */
 async function render(){
