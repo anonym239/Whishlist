@@ -382,13 +382,13 @@ function auth(app){
  const done=r=>{tok=r.token;ls.set('wl-tok',tok);setCur(r.slug);go('edit')};
  const link=(t,m)=>h('a',{href:'#',onclick:e=>{e.preventDefault();mode=m;step=1;draw()}},t);
  const draw=()=>{
-  const msg=h('p',{class:'mu',role:'alert'}),E=h('input',{type:'email',placeholder:'E-Mail',autocomplete:'email','aria-label':'E-Mail'}),W=h('input',{type:'password',placeholder:'Passwort (min. 6 Zeichen)','aria-label':'Passwort',autocomplete:mode==='login'?'current-password':'new-password'});
+  const msg=h('p',{class:'mu',role:'alert'}),E=h('input',{type:'email',placeholder:'E-Mail, z.B. lena@beispiel.de',autocomplete:'email','aria-label':'E-Mail'}),W=h('input',{type:'password',placeholder:'Passwort (min. 6 Zeichen)','aria-label':'Passwort',autocomplete:mode==='login'?'current-password':'new-password'});
   const fail=r=>{msg.textContent=(r.locked?'🔒 ':'')+r.error;if(r.locked){const b=box.querySelector('.wide');if(b){b.disabled=true;setTimeout(()=>{b.disabled=false},Math.min(r.locked,2)*60000)}}box.classList.remove('shake');void box.offsetWidth;box.classList.add('shake')};
   if(mode==='login')put(box,h('h2',{},'Willkommen zurück'),E,W,msg,
    h('button',{class:'wide',onclick:async e=>{burst(e);const r=await api('login',{email:E.value,pw:W.value});r.error?fail(r):done(r)}},'Anmelden'),
    h('p',{class:'links'},link('Neu hier? Eigene Liste erstellen','reg'),h('br'),link('Passwort vergessen?','reset')));
   else if(mode==='reg'){
-   const N=h('input',{placeholder:'Dein Name','aria-label':'Name'}),O=occSel('Geburtstag'),B=h('input',{type:'date','aria-label':'Datum'}),Q=h('select',{'aria-label':'Sicherheitsfrage'},QS.map(q=>h('option',{},q))),A=h('input',{placeholder:'Antwort (für „Passwort vergessen“)','aria-label':'Antwort'});
+   const N=h('input',{placeholder:'Dein Vorname, z.B. Lena','aria-label':'Name'}),O=occSel('Geburtstag'),B=h('input',{type:'date','aria-label':'Datum'}),Q=h('select',{'aria-label':'Sicherheitsfrage'},QS.map(q=>h('option',{},q))),A=h('input',{placeholder:'Antwort (für „Passwort vergessen“)','aria-label':'Antwort'});
    const lab=h('span',{},'Dein Geburtstag');O.addEventListener('change',()=>lab.textContent=O.value==='Geburtstag'?'Dein Geburtstag':'Datum');
    put(box,h('h2',{},'Eigene Wunschliste erstellen'),N,h('label',{class:'mu'},'Anlass',O),h('label',{class:'mu'},lab,B),E,W,h('label',{class:'mu'},'Sicherheitsfrage',Q),A,msg,
     h('button',{class:'wide',onclick:async e=>{burst(e);const r=await api('register',{name:N.value.trim(),occasion:O.value,bd:B.value,email:E.value,pw:W.value,q:Q.value,qa:A.value});r.error?fail(r):done(r)}},'Registrieren'),
@@ -435,7 +435,7 @@ const TABS=[['list','gift','Wünsche'],['add','plus','Hinzufügen'],['share','sh
 
 /* ---------- Besitzer-Bereich ---------- */
 function listForm(w){
- const N=h('input',{placeholder:'z.B. Alex',value:w?w.name:''}),O=occSel(w?w.occasion:'Geburtstag'),B=h('input',{type:'date',value:w?w.bd:''}),msg=h('p',{class:'mu',role:'alert'});
+ const N=h('input',{placeholder:'z.B. Lena',value:w?w.name:''}),O=occSel(w?w.occasion:'Geburtstag'),B=h('input',{type:'date',value:w?w.bd:''}),msg=h('p',{class:'mu',role:'alert'});
  return h('div',{},h('h3',{},w?'Aktuelle Liste bearbeiten':'Neue Liste anlegen'),
   !w&&h('p',{class:'mu small'},'Zum Beispiel eine zweite Liste für Weihnachten.'),
   h('div',{class:'form3'},fld('Name',N),fld('Anlass',O),fld('Datum',B)),msg,
@@ -486,7 +486,7 @@ async function owner(app,id){
 
  function viewAdd(){
   let pri=0,up='';const txt=h('span',{class:'mu small'},PRI[0]);
-  const T=h('input',{placeholder:'z.B. ESP32 Board'}),P=h('input',{placeholder:'z.B. 49,99',inputmode:'decimal'}),Lk=h('input',{placeholder:'z.B. amazon.de/…',inputmode:'url'}),I=h('input',{placeholder:'https://…',inputmode:'url'}),F=h('input',{type:'file',accept:'image/*'}),prev=h('div',{class:'prev','aria-hidden':'true'},ico('img'));
+  const T=h('input',{placeholder:'z.B. Kabellose Kopfhörer'}),P=h('input',{placeholder:'z.B. 79,99',inputmode:'decimal'}),Lk=h('input',{placeholder:'z.B. www.mediamarkt.de/…',inputmode:'url'}),I=h('input',{placeholder:'Link zu einem Foto (https://…)',inputmode:'url'}),F=h('input',{type:'file',accept:'image/*'}),prev=h('div',{class:'prev','aria-hidden':'true'},ico('img'));
   const showPrev=src=>{prev.style.backgroundImage=src?`url("${src.replace(/"/g,'%22')}")`:'';prev.replaceChildren(...(src?[]:[ico('img')]))};
   I.addEventListener('input',()=>{if(!up)showPrev(okImg(I.value.trim())?I.value.trim():'')});
   F.addEventListener('change',async()=>{up=F.files[0]?await shrink(F.files[0]):'';showPrev(up||(okImg(I.value.trim())?I.value.trim():''))});
